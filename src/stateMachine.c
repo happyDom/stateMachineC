@@ -2,30 +2,27 @@
 #include "stdlib.h"
 #include "stateMachine.h"
 
-//标记当前的状态
-static stateMachine_stateID_t currentStateID = 0;
-
 /*
 初始化状态机
 */
 void fsm_init(stateMachine_stateID_t defaultState)
 {
-    currentStateID = defaultState;
+    __currentStateID = defaultState;
 
-    pStateMachine = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * stateID_end);
+    __pStateMachine = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * stateID_end);
 
     //遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 stateMachine_stateID_t 的定义是一致的
     for(int i=0; i < stateID_end; i++)
     {
-        pStateMachine[i].stateID = i;
-        pStateMachine[i].stateID_l = i;
-        pStateMachine[i].actions.pDoAction = NULL;
-        pStateMachine[i].actions.pEnterAction = NULL;
-        pStateMachine[i].actions.pExistAction = NULL;
-        pStateMachine[i].events = NULL;
+        __pStateMachine[i].stateID = i;
+        __pStateMachine[i].stateID_l = i;
+        __pStateMachine[i].actions.pDoAction = NULL;
+        __pStateMachine[i].actions.pEnterAction = NULL;
+        __pStateMachine[i].actions.pExistAction = NULL;
+        __pStateMachine[i].events = NULL;
 
         //初始化内部变量
-        pStateMachine[i].roundCounter = 0;
+        __pStateMachine[i].roundCounter = 0;
     }
 }
 
@@ -35,18 +32,18 @@ void fsm_init(stateMachine_stateID_t defaultState)
 */
 void fsm_eventSingUp(stateMachine_stateID_t state, stateMachine_stateID_t nextState, eventFunc pEvent)
 {
-    //如果 pStateMachine 没有初始化, 无法注册事件,直接返回
-    if (IS_NULL(pStateMachine)){return;}
+    //如果 __pStateMachine 没有初始化, 无法注册事件,直接返回
+    if (IS_NULL(__pStateMachine)){return;}
     
     //如果要向 stateID_end 注册事件,这是不被允许的
     if (stateID_end <= state){return;}
     
-    if (IS_NULL(pStateMachine[state].events))
+    if (IS_NULL(__pStateMachine[state].events))
     {
-        pStateMachine[state].events = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
-        pStateMachine[state].events->pEventForGoing = pEvent;
-        pStateMachine[state].events->nextState = nextState;
-        pStateMachine[state].events->nextEvent = NULL;
+        __pStateMachine[state].events = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
+        __pStateMachine[state].events->pEventForGoing = pEvent;
+        __pStateMachine[state].events->nextState = nextState;
+        __pStateMachine[state].events->nextEvent = NULL;
     }
     else
     {
@@ -54,7 +51,7 @@ void fsm_eventSingUp(stateMachine_stateID_t state, stateMachine_stateID_t nextSt
         p->pEventForGoing = pEvent;
         p->nextState = nextState;
         p->nextEvent = NULL;
-        for (stateMachine_event_t *idx = pStateMachine[state].events;;idx = idx->nextEvent)
+        for (stateMachine_event_t *idx = __pStateMachine[state].events;;idx = idx->nextEvent)
         {
             if(IS_NULL(idx->nextEvent))
             {
@@ -70,21 +67,21 @@ void fsm_eventSingUp(stateMachine_stateID_t state, stateMachine_stateID_t nextSt
 */
 void fsm_actionSignUp(stateMachine_stateID_t state, stateAction pEnter, stateAction pDo, stateAction pExist)
 {
-    //如果 pStateMachine 没有初始化, 无法注册动作,直接返回
-    if (IS_NULL(pStateMachine)){return;}
+    //如果 __pStateMachine 没有初始化, 无法注册动作,直接返回
+    if (IS_NULL(__pStateMachine)){return;}
 
     //如果要向 stateID_end 注册事件,这是不被允许的
     if (stateID_end <= state){return;}
     
-    pStateMachine[state].actions.pEnterAction = pEnter;
-    pStateMachine[state].actions.pDoAction = pDo;
-    pStateMachine[state].actions.pExistAction = pExist;
+    __pStateMachine[state].actions.pEnterAction = pEnter;
+    __pStateMachine[state].actions.pDoAction = pDo;
+    __pStateMachine[state].actions.pExistAction = pExist;
 }
 
 void fsm_run()      //运行一次状态机
 {   
     //获取当前的状态单元
-    stateMachineUnit_t *pSm = &pStateMachine[currentStateID];
+    stateMachineUnit_t *pSm = &__pStateMachine[__currentStateID];
     stateMachineUnit_t *pSmNew = NULL;
 
     // 执行当前状态的逗留活动
@@ -103,13 +100,13 @@ void fsm_run()      //运行一次状态机
             if(!IS_NULL(p->pEventForGoing) && go == p->pEventForGoing(pSm))
             {
                 //找到要跳转的目标状态
-                pSmNew = &pStateMachine[p->nextState];
+                pSmNew = &__pStateMachine[p->nextState];
                     
                 //更新 stateID_l 值
                 pSmNew->stateID_l = pSm->stateID;
 
                 //更新状态ID
-                currentStateID = pSmNew->stateID;
+                __currentStateID = pSmNew->stateID;
 
                 //结束事件循环
                 break;

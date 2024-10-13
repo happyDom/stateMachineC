@@ -49,7 +49,8 @@ typedef struct
     unsigned int roundCounter;          //这个计数器显示了在本状态期间，状态机轮询的次数
 } stateMachineUnit_t;
 
-static stateMachineUnit_t *pStateMachine;    //存放状态单元的数组空间的地址，数组地址单元数量不小于状态数量
+static stateMachineUnit_t *__pStateMachine;         //存放状态单元的数组空间的地址，数组地址单元数量不小于状态数量
+static stateMachine_stateID_t __currentStateID = 0;   //标记当前的状态
 
 //初始化状态表
 void fsm_init();
