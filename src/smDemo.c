@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "limits.h"
-#include "stateMachineDesign.h"
+#include "smDemo.h"
 
 char keys[7] = {'a','b','c','d','e','f','g'};
 
@@ -28,7 +28,7 @@ stateMachine_eventResult_t pressB(stateMachineUnit_t *pSm) {return 'b' == inputK
 stateMachine_eventResult_t pressC(stateMachineUnit_t *pSm) {return 'c' == inputKey;};
 stateMachine_eventResult_t pressD(stateMachineUnit_t *pSm) {return 'd' == inputKey;};
 
-void dyyStateMachineBuild(stateMachine_stateID_t defaultState)
+void smDemoBuild(stateMachine_stateID_t defaultState)
 {
     fsm_init(defaultState);
     
@@ -47,7 +47,10 @@ void dyyStateMachineBuild(stateMachine_stateID_t defaultState)
     fsm_eventSingUp(d, b, (eventFunc)&pressB);
 }
 
-void dyyStateMachineRun(void)
+/*
+包装一下 fsm_run 函数，以便在引用时更直观
+*/
+void smDemoRun(void)
 {
     fsm_run();
 }

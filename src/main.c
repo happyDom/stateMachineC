@@ -1,9 +1,9 @@
 #include<stdio.h>
-#include "stateMachineDesign.h"
+#include "smDemo.h"
 
 int main(void){
     //创建状态机
-    dyyStateMachineBuild(0);
+    smDemoBuild(0);
 
     while (1)
     {
@@ -11,7 +11,7 @@ int main(void){
         inputKey = getchar();
         if('a' <= inputKey && inputKey <= 'z')
         {
-            dyyStateMachineRun();
+            smDemoRun();
         }
     }
 }
