@@ -13,7 +13,8 @@ typedef enum
     f,
     g,
     
-    stateID_end,    //
+    // 这是状态结束标记，这个状态被识别为不可用的状态，请务必保留该值
+    stateID_end,
 } stateMachine_stateID_t;
 
 typedef enum
@@ -23,7 +24,7 @@ typedef enum
 } stateMachine_eventResult_t;
 
 typedef void (* stateAction)(void *);
-typedef stateMachine_eventResult_t (*stateEvent)(void *);
+typedef stateMachine_eventResult_t (*eventFunc)(void *);
 
 typedef struct
 {
@@ -34,7 +35,7 @@ typedef struct
 
 typedef struct stateMachine_event_s
 {
-    stateEvent pEventForGoing;
+    eventFunc pEventForGoing;
     stateMachine_stateID_t nextState;           //目标状态
     struct stateMachine_event_s *nextEvent;     //下一个事件
 } stateMachine_event_t;                         //这是一个单向链表,用于登记多个事件
@@ -46,14 +47,14 @@ typedef struct
     stateMachine_actionMap_t actions;   //在本状态时需要执行的动作
     stateMachine_event_t *events;       //在本状态时，需要进行关注的事件，这是一个数组地址
     unsigned int roundCounter;          //这个计数器显示了在本状态期间，状态机轮询的次数
-} stateMachine_t;
+} stateMachineUnit_t;
 
-static stateMachine_t *pStateMachine;    //存放状态单元的数组空间的地址，数组地址单元数量不小于状态数量
+static stateMachineUnit_t *pStateMachine;    //存放状态单元的数组空间的地址，数组地址单元数量不小于状态数量
 
 //初始化状态表
 void fsm_init();
 //向指定的状态注册事件
-void fsm_eventSingUp(stateMachine_stateID_t state, stateEvent pEvent, stateMachine_stateID_t nextState);
+void fsm_eventSingUp(stateMachine_stateID_t state, stateMachine_stateID_t nextState, eventFunc pEvent);
 void fsm_actionSignUp(stateMachine_stateID_t state, stateAction pEnter, stateAction pDo, stateAction pExist);
 //运行一次状态机
 void fsm_run();

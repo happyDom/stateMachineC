@@ -12,7 +12,7 @@ void fsm_init(stateMachine_stateID_t defaultState)
 {
     currentStateID = defaultState;
 
-    pStateMachine = (stateMachine_t *)malloc(sizeof(stateMachine_t) * stateID_end);
+    pStateMachine = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * stateID_end);
 
     //遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 stateMachine_stateID_t 的定义是一致的
     for(int i=0; i < stateID_end; i++)
@@ -23,6 +23,8 @@ void fsm_init(stateMachine_stateID_t defaultState)
         pStateMachine[i].actions.pEnterAction = NULL;
         pStateMachine[i].actions.pExistAction = NULL;
         pStateMachine[i].events = NULL;
+
+        //初始化内部变量
         pStateMachine[i].roundCounter = 0;
     }
 }
@@ -31,7 +33,7 @@ void fsm_init(stateMachine_stateID_t defaultState)
 事件注册函数,将指定的事件注册到对应的状态下,但需要注意:
 事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
-void fsm_eventSingUp(stateMachine_stateID_t state, stateEvent pEvent, stateMachine_stateID_t nextState)
+void fsm_eventSingUp(stateMachine_stateID_t state, stateMachine_stateID_t nextState, eventFunc pEvent)
 {
     //如果 pStateMachine 没有初始化, 无法注册事件,直接返回
     if (IS_NULL(pStateMachine)){return;}
@@ -82,8 +84,8 @@ void fsm_actionSignUp(stateMachine_stateID_t state, stateAction pEnter, stateAct
 void fsm_run()      //运行一次状态机
 {   
     //获取当前的状态单元
-    stateMachine_t *pSm = &pStateMachine[currentStateID];
-    stateMachine_t *pSmNew = NULL;
+    stateMachineUnit_t *pSm = &pStateMachine[currentStateID];
+    stateMachineUnit_t *pSmNew = NULL;
 
     // 执行当前状态的逗留活动
     if(IS_NULL(*pSm->actions.pDoAction)) {return;}

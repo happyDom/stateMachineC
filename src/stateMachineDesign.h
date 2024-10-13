@@ -4,14 +4,14 @@
 
 char inputKey;
 
-void actionEntry(stateMachine_t *pSm);
-void actionDo(stateMachine_t *pSm);
-void actionExit(stateMachine_t *pSm);
+void actionEntry(stateMachineUnit_t *pSm);
+void actionDo(stateMachineUnit_t *pSm);
+void actionExit(stateMachineUnit_t *pSm);
 
-stateMachine_eventResult_t pressA(stateMachine_t *pSm);
-stateMachine_eventResult_t pressB(stateMachine_t *pSm);
-stateMachine_eventResult_t pressC(stateMachine_t *pSm);
-stateMachine_eventResult_t pressD(stateMachine_t *pSm);
+stateMachine_eventResult_t pressA(stateMachineUnit_t *pSm);
+stateMachine_eventResult_t pressB(stateMachineUnit_t *pSm);
+stateMachine_eventResult_t pressC(stateMachineUnit_t *pSm);
+stateMachine_eventResult_t pressD(stateMachineUnit_t *pSm);
 
 void dyyStateMachineBuild(stateMachine_stateID_t defaultState);
 void dyyStateMachineRun(void);

@@ -4,13 +4,13 @@
 
 char keys[7] = {'a','b','c','d','e','f','g'};
 
-void actionEntry(stateMachine_t *pSm)
+void actionEntry(stateMachineUnit_t *pSm)
 {
     pSm->roundCounter = 0;
     printf("%c is pressed, state enter  to: %c\n", inputKey, keys[pSm->stateID]);
 }
 
-void actionDo(stateMachine_t *pSm)
+void actionDo(stateMachineUnit_t *pSm)
 {
     if(pSm->roundCounter < UINT_MAX)
         pSm->roundCounter++;
@@ -18,15 +18,15 @@ void actionDo(stateMachine_t *pSm)
     printf("roundCounter of %c is %d\n", keys[pSm->stateID], pSm->roundCounter);
 }
 
-void actionExit(stateMachine_t *pSm)
+void actionExit(stateMachineUnit_t *pSm)
 {
     printf("%c is pressed, state exist from: %c\n", inputKey, keys[pSm->stateID_l]);
 }
 
-stateMachine_eventResult_t pressA(stateMachine_t *pSm) {return 'a' == inputKey;};
-stateMachine_eventResult_t pressB(stateMachine_t *pSm) {return 'b' == inputKey;};
-stateMachine_eventResult_t pressC(stateMachine_t *pSm) {return 'c' == inputKey;};
-stateMachine_eventResult_t pressD(stateMachine_t *pSm) {return 'd' == inputKey;};
+stateMachine_eventResult_t pressA(stateMachineUnit_t *pSm) {return 'a' == inputKey;};
+stateMachine_eventResult_t pressB(stateMachineUnit_t *pSm) {return 'b' == inputKey;};
+stateMachine_eventResult_t pressC(stateMachineUnit_t *pSm) {return 'c' == inputKey;};
+stateMachine_eventResult_t pressD(stateMachineUnit_t *pSm) {return 'd' == inputKey;};
 
 void dyyStateMachineBuild(stateMachine_stateID_t defaultState)
 {
@@ -39,12 +39,12 @@ void dyyStateMachineBuild(stateMachine_stateID_t defaultState)
     fsm_actionSignUp(d,(stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
     
     // 注册状态事件
-    fsm_eventSingUp(a, (stateEvent)&pressB, b);
-    fsm_eventSingUp(a, (stateEvent)&pressC, c);
-    fsm_eventSingUp(b, (stateEvent)&pressD, d);
-    fsm_eventSingUp(c, (stateEvent)&pressA, a);
-    fsm_eventSingUp(d, (stateEvent)&pressA, a);
-    fsm_eventSingUp(d, (stateEvent)&pressB, b);
+    fsm_eventSingUp(a, b, (eventFunc)&pressB);
+    fsm_eventSingUp(a, c, (eventFunc)&pressC);
+    fsm_eventSingUp(b, d, (eventFunc)&pressD);
+    fsm_eventSingUp(c, a, (eventFunc)&pressA);
+    fsm_eventSingUp(d, a, (eventFunc)&pressA);
+    fsm_eventSingUp(d, b, (eventFunc)&pressB);
 }
 
 void dyyStateMachineRun(void)
