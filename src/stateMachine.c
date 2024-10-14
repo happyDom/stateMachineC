@@ -27,6 +27,20 @@ void fsm_init(stateMachine_stateID_t defaultState)
 }
 
 /*
+将指定的状态机，复位到默认的状态
+*/
+void fsm_reset(stateMachineUnit_t *pSm, int *currentStateID, int *defaultStateID, int stateCount)
+{
+    if(IS_pSafe(pSm)){
+        if (IS_pSafe(defaultStateID) && *defaultStateID >= 0 && *defaultStateID < stateCount)
+        {
+            *currentStateID = *defaultStateID;
+            pSm[*currentStateID].stateID_l = stateCount;
+        }
+    }
+}
+
+/*
 事件注册函数,将指定的事件注册到对应的状态下,但需要注意:
 事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */

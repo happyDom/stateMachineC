@@ -55,6 +55,8 @@ static stateMachine_stateID_t __currentStateID = 0;   //标记当前的状态
 
 //初始化状态表
 void fsm_init();
+//复位状态机：将状态机的运行状态复位到默认状态
+void fsm_reset(stateMachineUnit_t *pSm, int *currentStateID, int *defaultStateID, int stateCount);
 //向指定的状态注册事件
 void fsm_eventSingUp(stateMachine_stateID_t state, stateMachine_stateID_t nextState, eventFunc pEvent);
 void fsm_actionSignUp(stateMachine_stateID_t state, stateAction pEnter, stateAction pDo, stateAction pExist);
