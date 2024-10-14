@@ -1,6 +1,7 @@
 #ifndef C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #define C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #define IS_NULL(p) (NULL == p)
+#define IS_pSafe(p) (NULL != p)
 
 typedef enum
 {   

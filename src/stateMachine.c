@@ -92,12 +92,12 @@ void fsm_run()      //运行一次状态机
     if(IS_NULL(pSm->events)){return;}
 
     //轮询当前状态的的事件
-    for(stateMachine_event_t *p = pSm->events;!IS_NULL(p); p=p->nextEvent)
+    for(stateMachine_event_t *p = pSm->events;IS_pSafe(p); p=p->nextEvent)
     {
         // 如果这个事件存在目标状态(stateID_end 不被识为有效的目标状态)
         if(stateID_end > p->nextState)
         {
-            if(!IS_NULL(p->pEventForGoing) && go == p->pEventForGoing(pSm))
+            if(IS_pSafe(p->pEventForGoing) && go == p->pEventForGoing(pSm))
             {
                 //找到要跳转的目标状态
                 pSmNew = &__pStateMachine[p->nextState];
@@ -115,12 +115,12 @@ void fsm_run()      //运行一次状态机
     }
 
     //如果进入了新的状态
-    if(!IS_NULL(pSmNew))
+    if(IS_pSafe(pSmNew))
     {
         //执行前一状态的 exist 动作
-        if(!IS_NULL(pSm->actions.pExistAction)) {pSm->actions.pExistAction(pSm);}
+        if(IS_pSafe(pSm->actions.pExistAction)) {pSm->actions.pExistAction(pSm);}
 
         //执行本状态的 Enter 动作
-        if(!IS_NULL(pSmNew->actions.pEnterAction)) {pSmNew->actions.pEnterAction(pSmNew);}
+        if(IS_pSafe(pSmNew->actions.pEnterAction)) {pSmNew->actions.pEnterAction(pSmNew);}
     }
 }
