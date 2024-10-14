@@ -20,7 +20,7 @@ void actionDo(stateMachineUnit_t *pSm)
 
 void actionExit(stateMachineUnit_t *pSm)
 {
-    printf("%c is pressed, state exist from: %c\n", inputKey, keys[pSm->stateID_l]);
+    printf("%c is pressed, state exist from: %c\n", inputKey, keys[pSm->stateID]);
 }
 
 stateMachine_eventResult_t pressA(stateMachineUnit_t *pSm) {return 'a' == inputKey;};

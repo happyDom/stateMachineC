@@ -15,7 +15,7 @@ void fsm_init(stateMachine_stateID_t defaultState)
     for(int i=0; i < stateID_end; i++)
     {
         __pStateMachine[i].stateID = i;
-        __pStateMachine[i].stateID_l = i;
+        __pStateMachine[i].stateID_l = stateID_end;     //默认的前一状态为 stateID_end
         __pStateMachine[i].actions.pDoAction = NULL;
         __pStateMachine[i].actions.pEnterAction = NULL;
         __pStateMachine[i].actions.pExistAction = NULL;
@@ -84,9 +84,16 @@ void fsm_run()      //运行一次状态机
     stateMachineUnit_t *pSm = &__pStateMachine[__currentStateID];
     stateMachineUnit_t *pSmNew = NULL;
 
-    // 执行当前状态的逗留活动
-    if(IS_NULL(pSm->actions.pDoAction)) {return;}
-    else {pSm->actions.pDoAction(pSm);}
+    //如果是第一次进入状态机，则需要执行 Enter 动作
+    if (stateID_end == pSm->stateID_l){
+        if(IS_NULL(pSm->actions.pEnterAction)) {return;}
+        else{pSm->actions.pEnterAction(pSm);}
+    }
+    else{
+        // 执行当前状态的逗留活动
+        if(IS_NULL(pSm->actions.pDoAction)) {return;}
+        else {pSm->actions.pDoAction(pSm);}
+    }
 
     //如果这个状态没有定义任何事件,则返回
     if(IS_NULL(pSm->events)){return;}
