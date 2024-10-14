@@ -11,6 +11,7 @@ int main(void){
         inputKey = getchar();
         if('a' <= inputKey && inputKey <= 'z')
         {
+            //运行状态机
             smDemoRun();
         }
     }

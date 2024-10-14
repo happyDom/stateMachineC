@@ -79,13 +79,13 @@ void fsm_actionSignUp(stateMachine_stateID_t state, stateAction pEnter, stateAct
 }
 
 void fsm_run()      //运行一次状态机
-{   
+{
     //获取当前的状态单元
     stateMachineUnit_t *pSm = &__pStateMachine[__currentStateID];
     stateMachineUnit_t *pSmNew = NULL;
 
     // 执行当前状态的逗留活动
-    if(IS_NULL(*pSm->actions.pDoAction)) {return;}
+    if(IS_NULL(pSm->actions.pDoAction)) {return;}
     else {pSm->actions.pDoAction(pSm);}
 
     //如果这个状态没有定义任何事件,则返回
@@ -118,9 +118,9 @@ void fsm_run()      //运行一次状态机
     if(!IS_NULL(pSmNew))
     {
         //执行前一状态的 exist 动作
-        if(!IS_NULL(*pSm->actions.pExistAction)) {pSm->actions.pExistAction(pSm);}
+        if(!IS_NULL(pSm->actions.pExistAction)) {pSm->actions.pExistAction(pSm);}
 
         //执行本状态的 Enter 动作
-        if(!IS_NULL(*pSmNew->actions.pEnterAction)) {pSmNew->actions.pEnterAction(pSmNew);}
+        if(!IS_NULL(pSmNew->actions.pEnterAction)) {pSmNew->actions.pEnterAction(pSmNew);}
     }
 }
