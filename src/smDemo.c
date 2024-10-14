@@ -1,20 +1,15 @@
 #include <stdio.h>
-#include "limits.h"
 #include "smDemo.h"
 
 char keys[7] = {'a','b','c','d','e','f','g'};
 
 void actionEntry(stateMachineUnit_t *pSm)
 {
-    pSm->roundCounter = 0;
     printf("%c is pressed, state enter  to: %c\n", inputKey, keys[pSm->stateID]);
 }
 
 void actionDo(stateMachineUnit_t *pSm)
-{
-    if(pSm->roundCounter < UINT_MAX)
-        pSm->roundCounter++;
-    
+{   
     printf("roundCounter of %c is %d\n", keys[pSm->stateID], pSm->roundCounter);
 }
 
@@ -28,23 +23,23 @@ stateMachine_eventResult_t pressB(stateMachineUnit_t *pSm) {return 'b' == inputK
 stateMachine_eventResult_t pressC(stateMachineUnit_t *pSm) {return 'c' == inputKey;};
 stateMachine_eventResult_t pressD(stateMachineUnit_t *pSm) {return 'd' == inputKey;};
 
-void smDemoBuild(stateMachine_stateID_t defaultState)
+void smDemoBuild()
 {
-    fsm_init(defaultState);
+    fsm_init(&demoSM, stateID_end, 0);
     
     // 注册状态动作
-    fsm_actionSignUp(a,(stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
-    fsm_actionSignUp(b,(stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
-    fsm_actionSignUp(c,(stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
-    fsm_actionSignUp(d,(stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
+    fsm_actionSignUp(&demoSM, a, (stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
+    fsm_actionSignUp(&demoSM, b,(stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
+    fsm_actionSignUp(&demoSM, c,(stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
+    fsm_actionSignUp(&demoSM, d,(stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
     
     // 注册状态事件
-    fsm_eventSingUp(a, b, (eventFunc)&pressB);
-    fsm_eventSingUp(a, c, (eventFunc)&pressC);
-    fsm_eventSingUp(b, d, (eventFunc)&pressD);
-    fsm_eventSingUp(c, a, (eventFunc)&pressA);
-    fsm_eventSingUp(d, a, (eventFunc)&pressA);
-    fsm_eventSingUp(d, b, (eventFunc)&pressB);
+    fsm_eventSingUp(&demoSM, a, b, (eventFunc)&pressB);
+    fsm_eventSingUp(&demoSM, a, c, (eventFunc)&pressC);
+    fsm_eventSingUp(&demoSM, b, d, (eventFunc)&pressD);
+    fsm_eventSingUp(&demoSM, c, a, (eventFunc)&pressA);
+    fsm_eventSingUp(&demoSM, d, a, (eventFunc)&pressA);
+    fsm_eventSingUp(&demoSM, d, b, (eventFunc)&pressB);
 }
 
 /*
@@ -52,5 +47,5 @@ void smDemoBuild(stateMachine_stateID_t defaultState)
 */
 void smDemoRun(void)
 {
-    fsm_run();
+    fsm_run(&demoSM);
 }

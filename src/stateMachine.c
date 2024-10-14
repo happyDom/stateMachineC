@@ -5,59 +5,61 @@
 /*
 初始化状态机
 */
-void fsm_init(stateMachine_stateID_t defaultState)
+void fsm_init(stateMachine_t *pSm, int stateIDs_count, int stateID_default)
 {
-    __currentStateID = defaultState;
+    if (IS_pSafe(pSm)){free(pSm);}
+    else{pSm = (stateMachine_t *)malloc(sizeof(stateMachine_t));}
 
-    __pStateMachine = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * stateID_end);
+    pSm->stateID_default = stateID_default;
+    pSm->stateIDs_Count = stateIDs_count;
+    pSm->stateID = pSm->stateID_default;
 
-    //遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 stateMachine_stateID_t 的定义是一致的
-    for(int i=0; i < stateID_end; i++)
+    pSm->pSMChain = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
+
+    //遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
+    for(int i=0; i < pSm->stateIDs_Count; i++)
     {
-        __pStateMachine[i].stateID = i;
-        __pStateMachine[i].stateID_l = stateID_end;     //默认的前一状态为 stateID_end
-        __pStateMachine[i].actions.pDoAction = NULL;
-        __pStateMachine[i].actions.pEnterAction = NULL;
-        __pStateMachine[i].actions.pExistAction = NULL;
-        __pStateMachine[i].events = NULL;
+        pSm->pSMChain[i].stateID = i;
+        pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;     //默认的前一状态为 stateID_end
+        pSm->pSMChain[i].actions.pDoAction = NULL;
+        pSm->pSMChain[i].actions.pEnterAction = NULL;
+        pSm->pSMChain[i].actions.pExistAction = NULL;
+        pSm->pSMChain[i].events = NULL;
 
         //初始化内部变量
-        __pStateMachine[i].roundCounter = 0;
+        pSm->pSMChain[i].roundCounter = 0;
     }
 }
 
 /*
 将指定的状态机，复位到默认的状态
 */
-void fsm_reset(stateMachineUnit_t *pSm, int *currentStateID, int *defaultStateID, int stateCount)
+void fsm_reset(stateMachine_t *pSm)
 {
-    if(IS_pSafe(pSm)){
-        if (IS_pSafe(defaultStateID) && *defaultStateID >= 0 && *defaultStateID < stateCount)
-        {
-            *currentStateID = *defaultStateID;
-            pSm[*currentStateID].stateID_l = stateCount;
-        }
+    if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
+        pSm->stateID = pSm->stateID_default;
+        pSm->pSMChain[pSm->stateID].stateID_l = pSm->stateIDs_Count;
     }
 }
 
 /*
-事件注册函数,将指定的事件注册到对应的状态下,但需要注意:
+向指定的状态机注册事件,将指定的事件注册到对应的状态下,但需要注意:
 事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
-void fsm_eventSingUp(stateMachine_stateID_t state, stateMachine_stateID_t nextState, eventFunc pEvent)
+void fsm_eventSingUp(stateMachine_t *pSm, unsigned int stateID, unsigned int nextState, eventFunc pEvent)
 {
     //如果 __pStateMachine 没有初始化, 无法注册事件,直接返回
-    if (IS_NULL(__pStateMachine)){return;}
+    if (IS_NULL(pSm)||IS_NULL(pSm->pSMChain)){return;}
     
-    //如果要向 stateID_end 注册事件,这是不被允许的
-    if (stateID_end <= state){return;}
+    //如果要注册的stateID不合理，则退出
+    if (pSm->stateIDs_Count <= stateID){return;}
     
-    if (IS_NULL(__pStateMachine[state].events))
+    if(IS_NULL(pSm->pSMChain[stateID].events))
     {
-        __pStateMachine[state].events = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
-        __pStateMachine[state].events->pEventForGoing = pEvent;
-        __pStateMachine[state].events->nextState = nextState;
-        __pStateMachine[state].events->nextEvent = NULL;
+        pSm->pSMChain[stateID].events = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
+        pSm->pSMChain[stateID].events->pEventForGoing = pEvent;
+        pSm->pSMChain[stateID].events->nextState = nextState;
+        pSm->pSMChain[stateID].events->nextEvent = NULL;
     }
     else
     {
@@ -65,11 +67,11 @@ void fsm_eventSingUp(stateMachine_stateID_t state, stateMachine_stateID_t nextSt
         p->pEventForGoing = pEvent;
         p->nextState = nextState;
         p->nextEvent = NULL;
-        for (stateMachine_event_t *idx = __pStateMachine[state].events;;idx = idx->nextEvent)
+        for (stateMachine_event_t *stEvent = pSm->pSMChain[stateID].events;;stEvent = stEvent->nextEvent)
         {
-            if(IS_NULL(idx->nextEvent))
+            if(IS_NULL(stEvent->nextEvent))
             {
-                idx->nextEvent = p;
+                stEvent->nextEvent = p;
                 break;
             }
         }
@@ -77,71 +79,80 @@ void fsm_eventSingUp(stateMachine_stateID_t state, stateMachine_stateID_t nextSt
 }
 
 /*
-动作注册函数,将指定的事件注册到对应的状态下
+向指定的状态机注册动作,将指定的事件注册到对应的状态下
 */
-void fsm_actionSignUp(stateMachine_stateID_t state, stateAction pEnter, stateAction pDo, stateAction pExist)
+void fsm_actionSignUp(stateMachine_t *pSm, unsigned int stateID, stateAction pEnter, stateAction pDo, stateAction pExist)
 {
-    //如果 __pStateMachine 没有初始化, 无法注册动作,直接返回
-    if (IS_NULL(__pStateMachine)){return;}
+    //如果状态机或者状态链没有初始化, 无法注册动作,直接返回
+    if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)){return;}
 
-    //如果要向 stateID_end 注册事件,这是不被允许的
-    if (stateID_end <= state){return;}
+    //如果要注册的stateID不合理，则退出
+    if (pSm->stateIDs_Count <= stateID){return;}
     
-    __pStateMachine[state].actions.pEnterAction = pEnter;
-    __pStateMachine[state].actions.pDoAction = pDo;
-    __pStateMachine[state].actions.pExistAction = pExist;
+    pSm->pSMChain[stateID].actions.pEnterAction = pEnter;
+    pSm->pSMChain[stateID].actions.pDoAction = pDo;
+    pSm->pSMChain[stateID].actions.pExistAction = pExist;
 }
 
-void fsm_run()      //运行一次状态机
+/*
+运行指定的状态机
+*/
+void fsm_run(stateMachine_t *pSm)
 {
     //获取当前的状态单元
-    stateMachineUnit_t *pSm = &__pStateMachine[__currentStateID];
-    stateMachineUnit_t *pSmNew = NULL;
+    stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
+    stateMachineUnit_t *stNew = NULL;
 
     //如果是第一次进入状态机，则需要执行 Enter 动作
-    if (stateID_end == pSm->stateID_l){
-        if(IS_NULL(pSm->actions.pEnterAction)) {return;}
-        else{pSm->actions.pEnterAction(pSm);}
+    if (pSm->stateIDs_Count == st->stateID_l){
+        st->roundCounter = 0;                                               //计数器复位
+        if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}
     }
     else{
         // 执行当前状态的逗留活动
-        if(IS_NULL(pSm->actions.pDoAction)) {return;}
-        else {pSm->actions.pDoAction(pSm);}
+        if(st->roundCounter < UINT_MAX) {st->roundCounter++;}               //计数器 +1
+
+        if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
     }
 
     //如果这个状态没有定义任何事件,则返回
-    if(IS_NULL(pSm->events)){return;}
-
-    //轮询当前状态的的事件
-    for(stateMachine_event_t *p = pSm->events;IS_pSafe(p); p=p->nextEvent)
-    {
-        // 如果这个事件存在目标状态(stateID_end 不被识为有效的目标状态)
-        if(stateID_end > p->nextState)
+    if(IS_pSafe(st->events)){
+        //轮询当前状态的的事件
+        for(stateMachine_event_t *p = st->events;IS_pSafe(p); p=p->nextEvent)
         {
-            if(IS_pSafe(p->pEventForGoing) && go == p->pEventForGoing(pSm))
+            // 如果这个事件存在目标状态(stateID_end 不被识为有效的目标状态)
+            if(pSm->stateIDs_Count > p->nextState)
             {
-                //找到要跳转的目标状态
-                pSmNew = &__pStateMachine[p->nextState];
+                if(IS_pSafe(p->pEventForGoing) && go == p->pEventForGoing(st))
+                {
+                    //找到要跳转的目标状态
+                    stNew = &pSm->pSMChain[p->nextState];
                     
-                //更新 stateID_l 值
-                pSmNew->stateID_l = pSm->stateID;
+                    //更新 stateID_l 值
+                    stNew->stateID_l = st->stateID;
 
-                //更新状态ID
-                __currentStateID = pSmNew->stateID;
+                    //更新状态ID
+                    pSm->stateID = stNew->stateID;
 
-                //结束事件循环
-                break;
+                    //结束事件循环
+                    break;
+                }
             }
+        }
+
+        //如果进入了新的状态
+        if(IS_pSafe(stNew))
+        {
+            //执行前一状态的 exist 动作
+            if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}
+
+            //执行本状态的 Enter 动作
+            stNew->roundCounter = 0;    //计数器复位
+
+            if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}
         }
     }
 
-    //如果进入了新的状态
-    if(IS_pSafe(pSmNew))
-    {
-        //执行前一状态的 exist 动作
-        if(IS_pSafe(pSm->actions.pExistAction)) {pSm->actions.pExistAction(pSm);}
-
-        //执行本状态的 Enter 动作
-        if(IS_pSafe(pSmNew->actions.pEnterAction)) {pSmNew->actions.pEnterAction(pSmNew);}
-    }
+    //更新 stateID_l 值
+    st->stateID_l = st->stateID;
 }

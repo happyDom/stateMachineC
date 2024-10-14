@@ -3,7 +3,7 @@
 
 int main(void){
     //创建状态机
-    smDemoBuild(0);
+    smDemoBuild();
 
     while (1)
     {

@@ -22,7 +22,24 @@
 做完以上，你应该可以试试你的状态机效果了 ^_^
 */
 
+//声明4个状态机必要变量
+typedef enum demoState_enum
+{   
+    //请将你的状态依次写到这里,请保证状态值从0开始且是连续的
+    a,
+    b,
+    c,
+    d,
+    e,
+    f,
+    g,
+    
+    // 这是状态结束标记，这个状态被识别为不可用的状态，请务必保留该值
+    stateID_end,
+} demoState_t;
+
 char inputKey;
+stateMachine_t demoSM;
 
 void actionEntry(stateMachineUnit_t *pSm);
 void actionDo(stateMachineUnit_t *pSm);
@@ -33,7 +50,7 @@ stateMachine_eventResult_t pressB(stateMachineUnit_t *pSm);
 stateMachine_eventResult_t pressC(stateMachineUnit_t *pSm);
 stateMachine_eventResult_t pressD(stateMachineUnit_t *pSm);
 
-void smDemoBuild(stateMachine_stateID_t defaultState);
+void smDemoBuild();
 void smDemoRun(void);
 
 #endif /* AEB98F67_FAB6_4295_BABC_018F687F4757 */
