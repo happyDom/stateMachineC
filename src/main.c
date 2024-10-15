@@ -1,4 +1,3 @@
-#include<stdio.h>
 #include "smDemo.h"
 
 int main(void){

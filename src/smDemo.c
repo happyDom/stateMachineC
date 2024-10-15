@@ -9,7 +9,7 @@ void actionEntry(stateMachineUnit_t *pSm)
 }
 
 void actionDo(stateMachineUnit_t *pSm)
-{   
+{
     printf("roundCounter of %c is %d\n", keys[pSm->stateID], pSm->roundCounter);
 }
 
