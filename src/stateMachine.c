@@ -5,7 +5,7 @@
 /*
 初始化状态机
 */
-void fsm_init(stateMachine_t *pSm, int stateIDs_count, int stateID_default)
+void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default)
 {
     if (IS_pSafe(pSm)){free(pSm);}
     else{pSm = (stateMachine_t *)malloc(sizeof(stateMachine_t));}
@@ -46,7 +46,7 @@ void fsm_reset(stateMachine_t *pSm)
 向指定的状态机注册事件,将指定的事件注册到对应的状态下,但需要注意:
 事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
-void fsm_eventSingUp(stateMachine_t *pSm, unsigned int stateID, unsigned int nextState, eventFunc pEvent)
+void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, eventFunc pEvent)
 {
     //如果 __pStateMachine 没有初始化, 无法注册事件,直接返回
     if (IS_NULL(pSm)||IS_NULL(pSm->pSMChain)){return;}
@@ -81,7 +81,7 @@ void fsm_eventSingUp(stateMachine_t *pSm, unsigned int stateID, unsigned int nex
 /*
 向指定的状态机注册动作,将指定的事件注册到对应的状态下
 */
-void fsm_actionSignUp(stateMachine_t *pSm, unsigned int stateID, stateAction pEnter, stateAction pDo, stateAction pExist)
+void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, stateAction pEnter, stateAction pDo, stateAction pExist)
 {
     //如果状态机或者状态链没有初始化, 无法注册动作,直接返回
     if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)){return;}
@@ -110,7 +110,7 @@ void fsm_run(stateMachine_t *pSm)
     }
     else{
         // 执行当前状态的逗留活动
-        if(st->roundCounter < UINT_MAX) {st->roundCounter++;}               //计数器 +1
+        if(st->roundCounter < UINT64_MAX) {st->roundCounter++;}               //计数器 +1
 
         if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
     }
@@ -125,14 +125,17 @@ void fsm_run(stateMachine_t *pSm)
             {
                 if(IS_pSafe(p->pEventForGoing) && go == p->pEventForGoing(st))
                 {
-                    //找到要跳转的目标状态
-                    stNew = &pSm->pSMChain[p->nextState];
-                    
-                    //更新 stateID_l 值
-                    stNew->stateID_l = st->stateID;
+                    //如果跳转到了其它的状态，则将新状态赋值给 stNew
+                    if(pSm->stateID != p->nextState){
+                        //找到要跳转的目标状态
+                        stNew = &pSm->pSMChain[p->nextState];
+                        
+                        //更新 stateID_l 值
+                        stNew->stateID_l = st->stateID;
 
-                    //更新状态ID
-                    pSm->stateID = stNew->stateID;
+                        //更新状态ID
+                        pSm->stateID = stNew->stateID;
+                    }
 
                     //结束事件循环
                     break;
