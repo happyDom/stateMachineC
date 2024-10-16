@@ -5,9 +5,6 @@
 */
 void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default)
 {
-    if (IS_pSafe(pSm)){free(pSm);}
-    else{pSm = (stateMachine_t *)malloc(sizeof(stateMachine_t));}
-
     pSm->stateID_default = stateID_default;
     pSm->stateIDs_Count = stateIDs_count;
     pSm->stateID = pSm->stateID_default;
