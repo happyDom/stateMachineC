@@ -10,7 +10,7 @@
 
 typedef enum
 {
-	aWait,
+	aWait=0,
 	go,
 } stateMachine_eventResult_t;
 
