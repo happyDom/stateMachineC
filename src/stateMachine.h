@@ -38,12 +38,13 @@ typedef struct stateMachine_event_s
 
 typedef struct
 {
-    stateMachineLatch_t latch;
-    unsigned int stateID_l;   //状态机的前一个状态
-    unsigned int stateID;     //当前状态循环的状态
-    stateMachine_actionMap_t actions;   //在本状态时需要执行的动作
-    stateMachine_event_t *events;       //在本状态时，需要进行关注的事件，这是一个数组地址
-    uint64_t roundCounter;          //这个计数器显示了在本状态期间，状态机轮询的次数
+    stateMachineLatch_t latch;              //状态锁，如果是 latched 状态，则状态机运行时，不会检测事件
+    unsigned int stateID_l;                 //状态机的前一个状态
+    unsigned int stateID;                   //当前状态循环的状态
+    stateMachine_actionMap_t actions;       //在本状态时需要执行的动作
+    stateMachine_event_t *events;           //在本状态时，需要进行关注的事件，这是一个数组地址
+    uint64_t roundCounter;                  //这个计数器显示了在本状态期间，状态机轮询的次数
+    void *buffer;                           //一个buffer，用于存放与实际实用场景相关的状态数据
 } stateMachineUnit_t;
 
 typedef struct stateMachine_t_s
