@@ -52,7 +52,8 @@ typedef struct stateMachine_t_s
 	stateMachineUnit_t *pSMChain;	//存放状态单元的数组空间的地址
 	uint8_t stateID;				//标记当前状态机的状态
 	uint8_t stateID_default;		//状态机的默认状态
-	uint8_t stateIDs_Count;		 //状态机的总状态数
+	uint8_t stateIDs_Count;			//状态机的总状态数
+	void *buffer;					//一个buffer，用于存放与实际实用场景相关的状态数据
 }stateMachine_t;
 
 //初始化状态表
