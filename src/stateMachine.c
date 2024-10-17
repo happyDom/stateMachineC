@@ -34,8 +34,17 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 void fsm_reset(stateMachine_t *pSm)
 {
     if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
+        stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
+        stateMachineUnit_t *stDefault = &pSm->pSMChain[pSm->stateID_default];
+
+        if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}  //执行当前状的退出事件
+        
+        //考虑到状态机复位后，状态机未必能及时轮询运行（例如子状态的状态机，依懒于父状态机的轮询调用），所以：
+        //新状态的 enter 事件，将在状态机轮询时执行，这样可以保障状态机执行是连续的
+        
+        //复位状态机
         pSm->stateID = pSm->stateID_default;
-        pSm->pSMChain[pSm->stateID].stateID_l = pSm->stateIDs_Count;
+        pSm->pSMChain[pSm->stateID].stateID_l = pSm->stateIDs_Count;    //这将使得状态机轮询到新状态时，执行 enter 事件（如果存在的话）
     }
 }
 
