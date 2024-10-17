@@ -37,6 +37,7 @@ void fsm_reset(stateMachine_t *pSm)
 	if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
 		stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
 
+		if(latched == st->latch) {st->latch = released;}						//如果当前状态有锁，则解除这个锁
 		if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}  //执行当前状的退出事件
 		
 		//考虑到状态机复位后，状态机未必能及时轮询运行（例如子状态的状态机，依懒于父状态机的轮询调用），所以：
