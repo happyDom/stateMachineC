@@ -10,9 +10,14 @@
 
 typedef enum
 {
-    aWait=0,
-    go=1,
+    aWait,
+    go,
 } stateMachine_eventResult_t;
+
+typedef enum{
+    released,
+    latched
+} stateMachineLatch_t;
 
 typedef void (* stateAction)(void *);
 typedef stateMachine_eventResult_t (*eventFunc)(void *);
@@ -33,6 +38,7 @@ typedef struct stateMachine_event_s
 
 typedef struct
 {
+    stateMachineLatch_t latch;
     unsigned int stateID_l;   //状态机的前一个状态
     unsigned int stateID;     //当前状态循环的状态
     stateMachine_actionMap_t actions;   //在本状态时需要执行的动作

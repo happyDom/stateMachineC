@@ -16,6 +16,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
     {
         pSm->pSMChain[i].stateID = i;
         pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;     //默认的前一状态为 stateID_end
+        pSm->pSMChain[i].latch = released;
         pSm->pSMChain[i].actions.pDoAction = NULL;
         pSm->pSMChain[i].actions.pEnterAction = NULL;
         pSm->pSMChain[i].actions.pExistAction = NULL;
@@ -110,8 +111,8 @@ void fsm_run(stateMachine_t *pSm)
         if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
     }
 
-    //如果这个状态没有定义任何事件,则返回
-    if(IS_pSafe(st->events)){
+    //如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
+    if(IS_pSafe(st->events) && released == st->latch){
         //轮询当前状态的的事件
         for(stateMachine_event_t *p = st->events;IS_pSafe(p); p=p->nextEvent)
         {
