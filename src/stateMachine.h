@@ -43,7 +43,7 @@ typedef struct
 	unsigned int stateID;					//当前状态循环的状态
 	stateMachine_actionMap_t actions;		//在本状态时需要执行的动作
 	stateMachine_event_t *events;			//在本状态时，需要进行关注的事件，这是一个数组地址
-	uint64_t roundCounter;					//这个计数器显示了在本状态期间，状态机轮询的次数
+	uint32_t roundCounter;					//这个计数器显示了在本状态期间，状态机轮询的次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
 	void *buffer;							//一个buffer，用于存放与实际实用场景相关的状态数据
 } stateMachineUnit_t;
 

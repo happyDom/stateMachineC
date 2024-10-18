@@ -38,7 +38,7 @@ void fsm_reset(stateMachine_t *pSm)
 		stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
 
 		if(latched == st->latch) {st->latch = released;}						//如果当前状态有锁，则解除这个锁
-		if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}  //执行当前状的退出事件
+		if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}	//执行当前状的退出事件
 		
 		//考虑到状态机复位后，状态机未必能及时轮询运行（例如子状态的状态机，依懒于父状态机的轮询调用），所以：
 		//新状态的 enter 事件，将在状态机轮询时执行，这样可以保障状态机执行是连续的
@@ -112,12 +112,12 @@ void fsm_run(stateMachine_t *pSm)
 
 	//如果是第一次进入状态机，则需要执行 Enter 动作
 	if (pSm->stateIDs_Count == st->stateID_l){
-		st->roundCounter = 0;											   //计数器复位
+		st->roundCounter = 0;												//计数器复位
 		if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}
 	}
 	else{
 		// 执行当前状态的逗留活动
-		if(st->roundCounter < UINT64_MAX) {st->roundCounter++;}			   //计数器 +1
+		if(st->roundCounter < UINT64_MAX) {st->roundCounter++;}				//计数器 +1
 
 		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
 	}
