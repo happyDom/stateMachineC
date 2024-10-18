@@ -162,10 +162,10 @@ void fsm_run(stateMachine_t *pSm)
 		st->roundCounter++;
 		//执行本状态的逗留活动
 		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
-	}
 
-	//状态机轮询完成，更新 stateID_l 值
-	st->stateID_l = st->stateID;
+		//状态机轮询完成，更新 stateID_l 值
+		st->stateID_l = st->stateID;
+	}
 
 	//记录状态机的轮询次数
 	pSm->roundCounter++;
