@@ -23,7 +23,6 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 		pSm->pSMChain[i].actions.pEnterAction = NULL;
 		pSm->pSMChain[i].actions.pExistAction = NULL;
 		pSm->pSMChain[i].events = NULL;
-		pSm->pSMChain[i].roundCounter = 0;
 		pSm->pSMChain[i].buffer = NULL;
 		pSm->pSMChain[i].pSm = pSm;							//登记状态机的指针
 
@@ -47,6 +46,7 @@ void fsm_reset(stateMachine_t *pSm)
 		//新状态的 enter 事件，将在状态机轮询时执行，这样可以保障状态机执行是连续的
 		
 		//复位状态机
+		pSm->roundCounter = 0;
 		pSm->stateID = pSm->stateID_default;
 		pSm->pSMChain[pSm->stateID].stateID_l = pSm->stateIDs_Count;	//这将使得状态机轮询到新状态时，执行 enter 事件（如果存在的话）
 	}
@@ -115,7 +115,8 @@ void fsm_run(stateMachine_t *pSm)
 
 	//如果是第一次轮询状态机，则需要执行 Enter 动作
 	if (0 == pSm->roundCounter){
-		if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}
+		st->roundCounter = 0;		//复位状态计数
+		if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}	//如果有enter事件，则执行之
 	}
 
 	//如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
