@@ -54,6 +54,7 @@ typedef struct stateMachine_t_s
 	uint8_t stateID;				//标记当前状态机的状态
 	uint8_t stateID_default;		//状态机的默认状态
 	uint8_t stateIDs_Count;			//状态机的总状态数
+	uint32_t roundCounter;			//记录状态机的轮询次数
 	void *buffer;					//一个buffer，用于存放与实际实用场景相关的状态数据
 }stateMachine_t;
 
