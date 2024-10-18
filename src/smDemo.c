@@ -5,7 +5,7 @@ char keys[7] = {'a','b','c','d','e','f','g'};
 
 char inputKey;
 stateMachine_t demoSM;
-demoState_t abcSM;
+stateMachine_t abcSM;
 
 void actionEntry(stateMachineUnit_t *pSt)
 {

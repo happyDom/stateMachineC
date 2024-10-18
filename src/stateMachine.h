@@ -50,6 +50,7 @@ typedef struct
 
 typedef struct stateMachine_t_s
 {
+	uint32_t *enterCounterOf;		//一个数组，用于记录状态机中每一个状态出现的次数
 	stateMachineUnit_t *pSMChain;	//存放状态单元的数组空间的地址
 	uint8_t stateID;				//标记当前状态机的状态
 	uint8_t stateID_default;		//状态机的默认状态

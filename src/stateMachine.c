@@ -9,6 +9,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->stateIDs_Count = stateIDs_count;
 	pSm->stateID = pSm->stateID_default;
 	pSm->roundCounter = 0;
+	pSm->enterCounterOf = (uint32_t *)malloc(sizeof(uint32_t) * pSm->stateIDs_Count);
 	pSm->buffer = NULL;
 
 	pSm->pSMChain = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
@@ -28,6 +29,9 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 
 		//初始化内部变量
 		pSm->pSMChain[i].roundCounter = 0;
+
+		//同步设置该状态的出现次数为0
+		pSm->enterCounterOf[i] = 0;
 	}
 }
 
@@ -46,10 +50,16 @@ void fsm_reset(stateMachine_t *pSm)
 		//新状态的 enter 事件，将在状态机轮询时执行，这样可以保障状态机执行是连续的
 		
 		//复位状态机
-		pSm->roundCounter = 0;
+		pSm->roundCounter = 0;	//复位状态机的轮询次数
 		pSm->stateID = pSm->stateID_default;
-		pSm->pSMChain[pSm->stateID_default].stateID_l = pSm->stateIDs_Count;	//这将使得状态机轮询到新状态时，执行 enter 事件（如果存在的话）
+		pSm->pSMChain[pSm->stateID_default].stateID_l = pSm->stateIDs_Count;
 		pSm->pSMChain[pSm->stateID_default].latch = released;					//复位状态锁
+
+		//复位各状态出现的次数值
+		for(int i=0; i < pSm->stateIDs_Count; i++)
+		{
+			pSm->enterCounterOf[i] = 0;
+		}
 	}
 }
 
@@ -153,6 +163,9 @@ void fsm_run(stateMachine_t *pSm)
 		
 		//执行当前状态的 exist 动作
 		if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}
+
+		//更新当前状态的出现次数
+		pSm->enterCounterOf[st->stateID]++;
 
 		stNew->roundCounter = 0;	//复位新状态计数器
 		if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
