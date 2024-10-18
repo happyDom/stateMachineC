@@ -48,7 +48,8 @@ void fsm_reset(stateMachine_t *pSm)
 		//复位状态机
 		pSm->roundCounter = 0;
 		pSm->stateID = pSm->stateID_default;
-		pSm->pSMChain[pSm->stateID].stateID_l = pSm->stateIDs_Count;	//这将使得状态机轮询到新状态时，执行 enter 事件（如果存在的话）
+		pSm->pSMChain[pSm->stateID_default].stateID_l = pSm->stateIDs_Count;	//这将使得状态机轮询到新状态时，执行 enter 事件（如果存在的话）
+		pSm->pSMChain[pSm->stateID_default].latch = released;					//复位状态锁
 	}
 }
 
@@ -133,12 +134,6 @@ void fsm_run(stateMachine_t *pSm)
 					if(pSm->stateID != p->nextState){
 						//找到要跳转的目标状态
 						stNew = &pSm->pSMChain[p->nextState];
-						
-						//更新 stateID_l 值
-						stNew->stateID_l = st->stateID;
-
-						//更新状态ID
-						pSm->stateID = stNew->stateID;
 					}
 
 					//结束事件循环
@@ -146,21 +141,26 @@ void fsm_run(stateMachine_t *pSm)
 				}
 			}
 		}
-
-		//如果进入了新的状态
-		if(IS_pSafe(stNew))
-		{
-			//执行当前状态的 exist 动作
-			if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}
-
-			stNew->roundCounter = 0;	//复位新状态计数器
-			if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
-		}
 	}
+	//如果进入了新的状态
+	if(IS_pSafe(stNew))
+	{
+		//更新 stateID_l 值
+		stNew->stateID_l = st->stateID;
 
+		//更新状态ID
+		pSm->stateID = stNew->stateID;
+		
+		//执行当前状态的 exist 动作
+		if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}
+
+		stNew->roundCounter = 0;	//复位新状态计数器
+		if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
+	}
 	if(IS_NULL(stNew)){//如果继续留在当前状态，则执行当前状态的逗留活动
 		//增加轮询计数
 		st->roundCounter++;
+		
 		//执行本状态的逗留活动
 		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
 

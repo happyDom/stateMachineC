@@ -3,6 +3,10 @@
 
 char keys[7] = {'a','b','c','d','e','f','g'};
 
+char inputKey;
+stateMachine_t demoSM;
+demoState_t abcSM;
+
 void actionEntry(stateMachineUnit_t *pSt)
 {
     printf("%c is pressed, state enter  to: %c\n", inputKey, keys[pSt->stateID]);
@@ -26,6 +30,7 @@ stateMachine_eventResult_t pressD(stateMachineUnit_t *pSt) {return 'd' == inputK
 void smDemoBuild()
 {
     fsm_init(&demoSM, stateID_end, 0);
+    fsm_init(&abcSM,2,0);
     
     // 注册状态动作
     fsm_actionSignUp(&demoSM, a, (stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);

@@ -40,8 +40,6 @@ typedef enum
     stateID_end,
 } demoState_t;
 
-stateMachine_t demoSM;
-
 void actionEntry(stateMachineUnit_t *pSt);
 void actionDo(stateMachineUnit_t *pSt);
 void actionExit(stateMachineUnit_t *pSt);
@@ -54,6 +52,6 @@ stateMachine_eventResult_t pressD(stateMachineUnit_t *pSt);
 void smDemoBuild(void);
 void smDemoRun(void);
 
-char inputKey;
+extern char inputKey;
 
 #endif /* AEB98F67_FAB6_4295_BABC_018F687F4757 */

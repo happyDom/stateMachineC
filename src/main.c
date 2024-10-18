@@ -1,17 +1,16 @@
+#include <stdio.h>
 #include "smDemo.h"
 
-int main(void){
-    //创建状态机
-    smDemoBuild();
+int main(int argc, char const *argv[])
+{
 
+    smDemoBuild();
     while (1)
     {
-        printf("please press a key and then Enter it: ");
+        printf("please input a key: ");
         inputKey = getchar();
-        if('a' <= inputKey && inputKey <= 'z')
-        {
-            //运行状态机
-            smDemoRun();
-        }
+        smDemoRun();
     }
+    
+    return 0;
 }
