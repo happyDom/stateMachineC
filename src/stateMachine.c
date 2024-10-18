@@ -113,6 +113,11 @@ void fsm_run(stateMachine_t *pSm)
 	stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
 	stateMachineUnit_t *stNew = NULL;
 
+	//如果是第一次轮询状态机，则需要执行 Enter 动作
+	if (0 == pSm->roundCounter){
+		if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}
+	}
+
 	//如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
 	if(IS_pSafe(st->events) && released == st->latch){
 		//轮询当前状态的的事件
@@ -147,17 +152,14 @@ void fsm_run(stateMachine_t *pSm)
 			//执行当前状态的 exist 动作
 			if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}
 
-			//执行新状态的 Enter 动作
 			stNew->roundCounter = 0;	//复位新状态计数器
 			if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
 		}
 	}
 
 	if(IS_NULL(stNew)){//如果继续留在当前状态，则执行当前状态的逗留活动
-		if (0 == pSm->roundCounter){//如果是第一次轮询状态机，则需要执行 Enter 动作
-			if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}
-		}else{st->roundCounter++;} //增加轮询计数
-		
+		//增加轮询计数
+		st->roundCounter++;
 		//执行本状态的逗留活动
 		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
 	}
