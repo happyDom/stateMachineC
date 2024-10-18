@@ -3,25 +3,25 @@
 
 char keys[7] = {'a','b','c','d','e','f','g'};
 
-void actionEntry(stateMachineUnit_t *pSm)
+void actionEntry(stateMachineUnit_t *pSt)
 {
-    printf("%c is pressed, state enter  to: %c\n", inputKey, keys[pSm->stateID]);
+    printf("%c is pressed, state enter  to: %c\n", inputKey, keys[pSt->stateID]);
 }
 
-void actionDo(stateMachineUnit_t *pSm)
+void actionDo(stateMachineUnit_t *pSt)
 {
-    printf("roundCounter of %c is %d\n", keys[pSm->stateID], pSm->roundCounter);
+    printf("roundCounter of %c is %d\n", keys[pSt->stateID], pSt->roundCounter);
 }
 
-void actionExit(stateMachineUnit_t *pSm)
+void actionExit(stateMachineUnit_t *pSt)
 {
-    printf("%c is pressed, state exist from: %c\n", inputKey, keys[pSm->stateID]);
+    printf("%c is pressed, state exist from: %c\n", inputKey, keys[pSt->stateID]);
 }
 
-stateMachine_eventResult_t pressA(stateMachineUnit_t *pSm) {return 'a' == inputKey;};
-stateMachine_eventResult_t pressB(stateMachineUnit_t *pSm) {return 'b' == inputKey;};
-stateMachine_eventResult_t pressC(stateMachineUnit_t *pSm) {return 'c' == inputKey;};
-stateMachine_eventResult_t pressD(stateMachineUnit_t *pSm) {return 'd' == inputKey;};
+stateMachine_eventResult_t pressA(stateMachineUnit_t *pSt) {return 'a' == inputKey;};
+stateMachine_eventResult_t pressB(stateMachineUnit_t *pSt) {return 'b' == inputKey;};
+stateMachine_eventResult_t pressC(stateMachineUnit_t *pSt) {return 'c' == inputKey;};
+stateMachine_eventResult_t pressD(stateMachineUnit_t *pSt) {return 'd' == inputKey;};
 
 void smDemoBuild()
 {

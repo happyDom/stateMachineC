@@ -42,14 +42,14 @@ typedef enum
 
 stateMachine_t demoSM;
 
-void actionEntry(stateMachineUnit_t *pSm);
-void actionDo(stateMachineUnit_t *pSm);
-void actionExit(stateMachineUnit_t *pSm);
+void actionEntry(stateMachineUnit_t *pSt);
+void actionDo(stateMachineUnit_t *pSt);
+void actionExit(stateMachineUnit_t *pSt);
 
-stateMachine_eventResult_t pressA(stateMachineUnit_t *pSm);
-stateMachine_eventResult_t pressB(stateMachineUnit_t *pSm);
-stateMachine_eventResult_t pressC(stateMachineUnit_t *pSm);
-stateMachine_eventResult_t pressD(stateMachineUnit_t *pSm);
+stateMachine_eventResult_t pressA(stateMachineUnit_t *pSt);
+stateMachine_eventResult_t pressB(stateMachineUnit_t *pSt);
+stateMachine_eventResult_t pressC(stateMachineUnit_t *pSt);
+stateMachine_eventResult_t pressD(stateMachineUnit_t *pSt);
 
 void smDemoBuild(void);
 void smDemoRun(void);
