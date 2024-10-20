@@ -14,11 +14,6 @@ typedef enum
 	go,
 } stateMachine_eventResult_t;
 
-typedef enum{
-	released,
-	latched
-} stateMachineLatch_t;
-
 typedef void (* stateAction)(void *);
 typedef stateMachine_eventResult_t (*eventFunc)(void *);
 
@@ -38,7 +33,7 @@ typedef struct stateMachine_event_s
 
 typedef struct
 {
-	stateMachineLatch_t latch;				//状态锁，如果是 latched 状态，则状态机运行时，不会检测事件
+	bool latched;							//状态锁，为真时，状态机进行该状态的轮询时，不会检测该状态注册的事件
 	unsigned int stateID_l;					//状态机的前一个状态
 	unsigned int stateID;					//当前状态循环的状态
 	stateMachine_actionMap_t actions;		//在本状态时需要执行的动作
@@ -50,7 +45,8 @@ typedef struct
 
 typedef struct stateMachine_t_s
 {
-	uint32_t *enterCounterOf;		//一个数组，用于记录状态机中每一个状态出现的次数
+	bool latched;					//状态机锁，为真时，状态机不运行任何状态的动作，不检测任何事件
+	uint32_t *enterCounterOf;		//一个数组，用于记录状态机中每一个状态出现的次数，在对应状态退出时进行计数
 	stateMachineUnit_t *pSMChain;	//存放状态单元的数组空间的地址
 	uint8_t stateID;				//标记当前状态机的状态
 	uint8_t stateID_default;		//状态机的默认状态

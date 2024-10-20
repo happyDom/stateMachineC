@@ -11,6 +11,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->roundCounter = 0;
 	pSm->enterCounterOf = (uint32_t *)malloc(sizeof(uint32_t) * pSm->stateIDs_Count);
 	pSm->buffer = NULL;
+	pSm.latched = false;
 
 	pSm->pSMChain = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
 
@@ -19,7 +20,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	{
 		pSm->pSMChain[i].stateID = i;
 		pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;	 //默认的前一状态为 stateID_end
-		pSm->pSMChain[i].latch = released;
+		pSm->pSMChain[i].latched = false;
 		pSm->pSMChain[i].actions.pDoAction = NULL;
 		pSm->pSMChain[i].actions.pEnterAction = NULL;
 		pSm->pSMChain[i].actions.pExistAction = NULL;
@@ -120,6 +121,10 @@ void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, stateAction pEnter, 
 */
 void fsm_run(stateMachine_t *pSm)
 {
+	if(pSm.latched){//如果状态机被锁，则只增加计数器，不运行任何实际逻辑
+		pSm.roundCounter++;
+		return;
+	}
 	//获取当前的状态单元
 	stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
 	stateMachineUnit_t *stNew = NULL;
@@ -131,7 +136,7 @@ void fsm_run(stateMachine_t *pSm)
 	}
 
 	//如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
-	if(IS_pSafe(st->events) && released == st->latch){
+	if(IS_pSafe(st->events) && !st->latched){
 		//轮询当前状态的的事件
 		for(stateMachine_event_t *p = st->events;IS_pSafe(p); p=p->nextEvent)
 		{
