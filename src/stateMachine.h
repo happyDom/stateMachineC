@@ -4,14 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #define IS_NULL(p) (NULL == p)
 #define IS_pSafe(p) (NULL != p)
 
-typedef enum
-{
+typedef enum{
 	aWait=0,
-	go,
+	go=1,
 } stateMachine_eventResult_t;
 
 typedef void (* stateAction)(void *);

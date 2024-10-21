@@ -11,7 +11,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->roundCounter = 0;
 	pSm->enterCounterOf = (uint32_t *)malloc(sizeof(uint32_t) * pSm->stateIDs_Count);
 	pSm->buffer = NULL;
-	pSm.latched = false;
+	pSm->latched = false;
 
 	pSm->pSMChain = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
 
@@ -44,7 +44,7 @@ void fsm_reset(stateMachine_t *pSm)
 	if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
 		stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
 
-		if(latched == st->latch) {st->latch = released;}						//如果当前状态有锁，则解除这个锁
+		if(st->latched) {st->latched = false;}						//如果当前状态有锁，则解除这个锁
 		if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}	//执行当前状的退出事件
 		
 		//考虑到状态机复位后，状态机未必能及时轮询运行（例如子状态的状态机，依懒于父状态机的轮询调用），所以：
@@ -54,7 +54,7 @@ void fsm_reset(stateMachine_t *pSm)
 		pSm->roundCounter = 0;	//复位状态机的轮询次数
 		pSm->stateID = pSm->stateID_default;
 		pSm->pSMChain[pSm->stateID_default].stateID_l = pSm->stateIDs_Count;
-		pSm->pSMChain[pSm->stateID_default].latch = released;					//复位状态锁
+		pSm->pSMChain[pSm->stateID_default].latched = false;					//复位状态锁
 
 		//复位各状态出现的次数值
 		for(int i=0; i < pSm->stateIDs_Count; i++)
@@ -121,8 +121,8 @@ void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, stateAction pEnter, 
 */
 void fsm_run(stateMachine_t *pSm)
 {
-	if(pSm.latched){//如果状态机被锁，则只增加计数器，不运行任何实际逻辑
-		pSm.roundCounter++;
+	if(pSm->latched){//如果状态机被锁，则只增加计数器，不运行任何实际逻辑
+		pSm->roundCounter++;
 		return;
 	}
 	//获取当前的状态单元
