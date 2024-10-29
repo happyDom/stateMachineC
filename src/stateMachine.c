@@ -68,7 +68,7 @@ void fsm_reset(stateMachine_t *pSm)
 向指定的状态机注册事件,将指定的事件注册到对应的状态下,但需要注意:
 事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
-void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, eventFunc pEvent)
+void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, stateMachine_eventResult_t (*pEvent)(stateMachineUnit_t *))
 {
 	//如果 __pStateMachine 没有初始化, 无法注册事件,直接返回
 	if (IS_NULL(pSm)||IS_NULL(pSm->pSMChain)){return;}
@@ -103,7 +103,7 @@ void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, ev
 /*
 向指定的状态机注册动作,将指定的事件注册到对应的状态下
 */
-void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, stateAction pEnter, stateAction pDo, stateAction pExist)
+void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(stateMachineUnit_t *), void (*pDo)(stateMachineUnit_t *), void (*pExist)(stateMachineUnit_t *))
 {
 	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
 	if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)){return;}

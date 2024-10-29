@@ -33,18 +33,18 @@ void smDemoBuild()
     fsm_init(&abcSM,2,0);
     
     // 注册状态动作
-    fsm_actionSignUp(&demoSM, a, (stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
-    fsm_actionSignUp(&demoSM, b,(stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
-    fsm_actionSignUp(&demoSM, c,(stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
-    fsm_actionSignUp(&demoSM, d,(stateAction)&actionEntry, (stateAction)&actionDo, (stateAction)&actionExit);
+    fsm_actionSignUp(&demoSM, a, actionEntry, actionDo, actionExit);
+    fsm_actionSignUp(&demoSM, b,actionEntry, actionDo, actionExit);
+    fsm_actionSignUp(&demoSM, c,actionEntry, actionDo, actionExit);
+    fsm_actionSignUp(&demoSM, d,actionEntry, actionDo, actionExit);
     
     // 注册状态事件
-    fsm_eventSingUp(&demoSM, a, b, (eventFunc)&pressB);
-    fsm_eventSingUp(&demoSM, a, c, (eventFunc)&pressC);
-    fsm_eventSingUp(&demoSM, b, d, (eventFunc)&pressD);
-    fsm_eventSingUp(&demoSM, c, a, (eventFunc)&pressA);
-    fsm_eventSingUp(&demoSM, d, a, (eventFunc)&pressA);
-    fsm_eventSingUp(&demoSM, d, b, (eventFunc)&pressB);
+    fsm_eventSingUp(&demoSM, a, b, pressB);
+    fsm_eventSingUp(&demoSM, a, c, pressC);
+    fsm_eventSingUp(&demoSM, b, d, pressD);
+    fsm_eventSingUp(&demoSM, c, a, pressA);
+    fsm_eventSingUp(&demoSM, d, a, pressA);
+    fsm_eventSingUp(&demoSM, d, b, pressB);
 }
 
 /*
