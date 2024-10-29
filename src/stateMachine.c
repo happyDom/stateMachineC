@@ -133,6 +133,7 @@ void fsm_run(stateMachine_t *pSm)
 	if (0 == pSm->roundCounter){
 		st->roundCounter = 0;		//复位状态计数
 		if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}	//如果有enter事件，则执行之
+		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}		//如果有do事件，则执行之
 	}
 
 	//如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
@@ -174,6 +175,7 @@ void fsm_run(stateMachine_t *pSm)
 
 		stNew->roundCounter = 0;	//复位新状态计数器
 		if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
+		if(IS_pSafe(stNew->actions.pDoAction)) {stNew->actions.pDoAction(stNew);}	//执行新状态的 do 动作
 	}else{//如果继续留在当前状态，则执行当前状态的逗留活动
 		if(st->roundCounter > 0){//执行本状态的逗留活动
 			if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
