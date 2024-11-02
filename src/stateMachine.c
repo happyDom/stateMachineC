@@ -176,13 +176,13 @@ void fsm_run(stateMachine_t *pSm)
 		stNew->roundCounter = 0;	//复位新状态计数器
 		if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
 		if(IS_pSafe(stNew->actions.pDoAction)) {stNew->actions.pDoAction(stNew);}	//执行新状态的 do 动作
-	}else{//如果继续留在当前状态，则执行当前状态的逗留活动
+	}else if (pSm->roundCounter > 0){//如果继续留在当前状态，则执行当前状态的逗留活动
+		//增加轮询计数
+		st->roundCounter++;
+
 		if(st->roundCounter > 0){//执行本状态的逗留活动
 			if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
 		}
-		
-		//增加轮询计数
-		st->roundCounter++;
 		
 		//状态机轮询完成，更新 stateID_l 值
 		st->stateID_l = st->stateID;
