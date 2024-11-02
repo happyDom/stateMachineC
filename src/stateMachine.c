@@ -132,9 +132,10 @@ void fsm_run(stateMachine_t *pSm)
 	//增加轮询计数
 	st->roundCounter++;
 
-	//如果是第一次轮询状态机，则需要执行 Enter 动作
+	//如果是第一次轮询状态机，则需要先执行一次Enter动作 和Do动作
 	if (0 == pSm->roundCounter){
 		st->roundCounter = 0;		//复位状态计数
+		st->stateID_l = st->stateID;
 		if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}	//如果有enter事件，则执行之
 		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}		//如果有do事件，则执行之
 	}
@@ -179,7 +180,7 @@ void fsm_run(stateMachine_t *pSm)
 		stNew->roundCounter = 0;	//复位新状态计数器
 		if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
 		if(IS_pSafe(stNew->actions.pDoAction)) {stNew->actions.pDoAction(stNew);}	//执行新状态的 do 动作
-	}else if (st->roundCounter > 0){//如果继续留在当前状态，则执行当前状态的逗留活动
+	}else{//如果继续留在当前状态，则执行当前状态的逗留活动
 		//执行本状态的逗留活动
 		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
 		
