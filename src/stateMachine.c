@@ -138,54 +138,55 @@ void fsm_run(stateMachine_t *pSm)
 		st->stateID_l = st->stateID;
 		if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}	//如果有enter事件，则执行之
 		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}		//如果有do事件，则执行之
-	}
-
-	//如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
-	if(IS_pSafe(st->events) && !st->latched){
-		//轮询当前状态的的事件
-		for(stateMachine_event_t *p = st->events;IS_pSafe(p); p=p->nextEvent)
-		{
-			// 如果这个事件存在目标状态(stateID_end 不被识为有效的目标状态)
-			if(pSm->stateIDs_Count > p->nextState)
+	}else{
+		//如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
+		if(IS_pSafe(st->events) && !st->latched){
+			//轮询当前状态的的事件
+			for(stateMachine_event_t *p = st->events;IS_pSafe(p); p=p->nextEvent)
 			{
-				if(IS_pSafe(p->pEventForGoing) && go == p->pEventForGoing(st))
+				// 如果这个事件存在目标状态(stateID_end 不被识为有效的目标状态)
+				if(pSm->stateIDs_Count > p->nextState)
 				{
-					//如果跳转到了其它的状态，则将新状态赋值给 stNew
-					if(pSm->stateID != p->nextState){
-						//找到要跳转的目标状态
-						stNew = &pSm->pSMChain[p->nextState];
-					}
+					if(IS_pSafe(p->pEventForGoing) && go == p->pEventForGoing(st))
+					{
+						//如果跳转到了其它的状态，则将新状态赋值给 stNew
+						if(pSm->stateID != p->nextState){
+							//找到要跳转的目标状态
+							stNew = &pSm->pSMChain[p->nextState];
+						}
 
-					//结束事件循环
-					break;
+						//结束事件循环
+						break;
+					}
 				}
 			}
 		}
-	}
-	//如果进入了新的状态
-	if(IS_pSafe(stNew))
-	{
-		//更新 stateID_l 值
-		stNew->stateID_l = st->stateID;
-
-		//更新状态ID
-		pSm->stateID = stNew->stateID;
 		
-		//执行当前状态的 exist 动作
-		if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}
+		//如果进入了新的状态
+		if(IS_pSafe(stNew))
+		{
+			//更新 stateID_l 值
+			stNew->stateID_l = st->stateID;
 
-		//更新当前状态的出现次数
-		pSm->enterCounterOf[st->stateID]++;
+			//更新状态ID
+			pSm->stateID = stNew->stateID;
+			
+			//执行当前状态的 exist 动作
+			if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}
 
-		stNew->roundCounter = 0;	//复位新状态计数器
-		if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
-		if(IS_pSafe(stNew->actions.pDoAction)) {stNew->actions.pDoAction(stNew);}	//执行新状态的 do 动作
-	}else if(st->roundCounter > 0){//如果继续留在当前状态，则执行当前状态的逗留活动
-		//执行本状态的逗留活动
-		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
-		
-		//状态机轮询完成，更新 stateID_l 值
-		st->stateID_l = st->stateID;
+			//更新当前状态的出现次数
+			pSm->enterCounterOf[st->stateID]++;
+
+			stNew->roundCounter = 0;	//复位新状态计数器
+			if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
+			if(IS_pSafe(stNew->actions.pDoAction)) {stNew->actions.pDoAction(stNew);}	//执行新状态的 do 动作
+		}else{//如果继续留在当前状态，则执行当前状态的逗留活动
+			//执行本状态的逗留活动
+			if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
+			
+			//状态机轮询完成，更新 stateID_l 值
+			st->stateID_l = st->stateID;
+		}
 	}
 
 	//记录状态机的轮询次数
