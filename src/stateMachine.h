@@ -28,15 +28,15 @@ typedef struct
 struct stateMachine_event_s
 {
 	stateMachine_eventResult_t (*pEventForGoing)(stateMachineUnit_t *);
-	unsigned int nextState;						//目标状态
+	uint8_t nextState;						//目标状态
 	stateMachine_event_t *nextEvent;			//下一个事件
 };												//这是一个单向链表,用于登记多个事件
 
 struct stateMachineUnit_s
 {
 	bool latched;							//状态锁，为真时，状态机进行该状态的轮询时，不会检测该状态注册的事件
-	unsigned int stateID_l;					//状态机的前一个状态
-	unsigned int stateID;					//当前状态循环的状态
+	uint8_t stateID_l;					//状态机的前一个状态
+	uint8_t stateID;					//当前状态循环的状态
 	stateMachine_actionMap_t actions;		//在本状态时需要执行的动作
 	stateMachine_event_t *events;			//在本状态时，需要进行关注的事件，这是一个数组地址
 	uint32_t roundCounter;					//这个计数器显示了在本状态期间，状态机轮询的次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
