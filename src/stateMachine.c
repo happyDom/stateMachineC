@@ -121,6 +121,9 @@ void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(state
 */
 void fsm_run(stateMachine_t *pSm)
 {
+	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
+	if (IS_NULL(pSm)){return;}
+
 	if(pSm->latched){//如果状态机被锁，则只增加计数器，不运行任何实际逻辑
 		pSm->roundCounter++;
 		return;
