@@ -132,9 +132,6 @@ void fsm_run(stateMachine_t *pSm)
 	stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
 	stateMachineUnit_t *stNew = NULL;
 
-	//增加轮询计数
-	st->roundCounter++;
-
 	//如果是第一次轮询状态机，则需要先执行一次Enter动作 和Do动作
 	if (0 == pSm->roundCounter){
 		st->roundCounter = 0;		//复位状态计数
@@ -164,7 +161,13 @@ void fsm_run(stateMachine_t *pSm)
 				}
 			}
 		}
+
+		//更新状态机的计数值
+		pSm->roundCounter++;
 		
+		//更新当前状态的计数值
+		st->roundCounter++;
+
 		//如果进入了新的状态
 		if(IS_pSafe(stNew))
 		{
@@ -191,7 +194,4 @@ void fsm_run(stateMachine_t *pSm)
 			st->stateID_l = st->stateID;
 		}
 	}
-
-	//记录状态机的轮询次数
-	pSm->roundCounter++;
 }
