@@ -162,16 +162,13 @@ void fsm_run(stateMachine_t *pSm)
 			}
 		}
 
-		//更新状态机的计数值
-		pSm->roundCounter++;
-		
 		//更新当前状态的计数值
 		st->roundCounter++;
 
 		//如果进入了新的状态
 		if(IS_pSafe(stNew))
 		{
-			//更新 stateID_l 值
+			//将新状态的 stateID_l 值更新为当前状态的 stateID 值
 			stNew->stateID_l = st->stateID;
 
 			//更新状态ID
@@ -189,9 +186,9 @@ void fsm_run(stateMachine_t *pSm)
 		}else{//如果继续留在当前状态，则执行当前状态的逗留活动
 			//执行本状态的逗留活动
 			if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
-			
-			//状态机轮询完成，更新 stateID_l 值
-			st->stateID_l = st->stateID;
 		}
 	}
+
+	//更新状态机的计数值
+	pSm->roundCounter++;
 }
