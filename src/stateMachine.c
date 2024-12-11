@@ -44,7 +44,7 @@ void fsm_reset(stateMachine_t *pSm)
 	if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
 		stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
 
-		if(st->latched) {st->latched = false;}						//如果当前状态有锁，则解除这个锁
+		st->latched = false;													//解除当前状态的状态锁
 		if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}	//执行当前状的退出事件
 		
 		//考虑到状态机复位后，状态机未必能及时轮询运行（例如子状态的状态机，依懒于父状态机的轮询调用），所以：
@@ -133,7 +133,7 @@ void fsm_run(stateMachine_t *pSm)
 	stateMachineUnit_t *stNew = NULL;
 
 	//如果是第一次轮询状态机，则需要先执行一次Enter动作 和Do动作
-	if (0 == pSm->roundCounter){
+	if (pSm->stateIDs_Count == st->stateID_l){
 		st->roundCounter = 0;		//复位状态计数
 		st->stateID_l = st->stateID;
 		if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}	//如果有enter事件，则执行之
@@ -162,6 +162,9 @@ void fsm_run(stateMachine_t *pSm)
 			}
 		}
 
+		//更新状态机的计数值
+		pSm->roundCounter++;
+
 		//更新当前状态的计数值
 		st->roundCounter++;
 
@@ -188,7 +191,4 @@ void fsm_run(stateMachine_t *pSm)
 			if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
 		}
 	}
-
-	//更新状态机的计数值
-	pSm->roundCounter++;
 }
