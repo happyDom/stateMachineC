@@ -1,4 +1,6 @@
 #include "stateMachine.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 /*
 初始化状态机
