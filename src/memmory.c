@@ -1,8 +1,8 @@
 #include "memmory.h"
 #include <stdio.h>
  
-#define DMEM_BLOCK_SIZE         256      //内存块大小为128字节
-#define DMEM_BLOCK_NUM          20       //内存块个数为40个
+#define DMEM_BLOCK_SIZE         2      	//内存块大小(x字节)
+#define DMEM_BLOCK_NUM          512     //内存块个数
 #define DMEM_TOTAL_SIZE         (DMEM_BLOCK_SIZE*DMEM_BLOCK_NUM)    //内存总大小
  
 typedef enum
@@ -10,7 +10,7 @@ typedef enum
     DMEM_FREE   = 0,
     DMEM_USED   = 1,
 }DMEM_USED_ITEM;
- 
+
 typedef struct
 {
     DMEM_USED_ITEM   used;       //使用状态
