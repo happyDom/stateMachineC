@@ -1,21 +1,32 @@
 #include "stateMachine.h"
-#include <stdio.h>
-#include <stdlib.h>
+#include "memmory.h"
+// #include <stdio.h>
+// #include <stdlib.h>
 
 /*
 初始化状态机
 */
 void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default)
-{
+{	
+	DMEM *dyMM;
 	pSm->stateID_default = stateID_default;
 	pSm->stateIDs_Count = stateIDs_count;
 	pSm->stateID = pSm->stateID_default;
 	pSm->roundCounter = 0;
-	pSm->enterCounterOf = (uint32_t *)malloc(sizeof(uint32_t) * pSm->stateIDs_Count);
+	// pSm->enterCounterOf = (uint32_t *)malloc(sizeof(uint32_t) * pSm->stateIDs_Count);
+	dyMM = DynMemGet((sizeof(uint32_t) * pSm->stateIDs_Count));
+	if (IS_pSafe(dyMM)){
+		pSm->enterCounterOf = (uint32_t *)dyMM->addr;
+	}
+	
 	pSm->buffer = NULL;
 	pSm->latched = false;
 
-	pSm->pSMChain = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
+	// pSm->pSMChain = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
+	dyMM = DynMemGet(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
+	if(IS_pSafe(dyMM)){
+		pSm->pSMChain = (stateMachineUnit_t *)dyMM->addr;
+	}
 
 	//遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
 	for(int i=0; i < pSm->stateIDs_Count; i++)
