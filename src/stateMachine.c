@@ -1,14 +1,15 @@
 #include "stateMachine.h"
 #include "memmory.h"
-// #include <stdio.h>
+#include <stdio.h>
 // #include <stdlib.h>
+
+DMEM *dyMM;
 
 /*
 初始化状态机
 */
 void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default)
-{	
-	DMEM *dyMM;
+{
 	pSm->stateID_default = stateID_default;
 	pSm->stateIDs_Count = stateIDs_count;
 	pSm->stateID = pSm->stateID_default;
@@ -91,23 +92,31 @@ void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, st
 	
 	if(IS_NULL(pSm->pSMChain[stateID].events))
 	{
-		pSm->pSMChain[stateID].events = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
-		pSm->pSMChain[stateID].events->pEventForGoing = pEvent;
-		pSm->pSMChain[stateID].events->nextState = nextState;
-		pSm->pSMChain[stateID].events->nextEvent = NULL;
+		// pSm->pSMChain[stateID].events = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
+		dyMM = DynMemGet(sizeof(stateMachine_event_t));
+		if (IS_pSafe(dyMM)){
+			pSm->pSMChain[stateID].events = (stateMachine_event_t*)dyMM->addr;
+			pSm->pSMChain[stateID].events->pEventForGoing = pEvent;
+			pSm->pSMChain[stateID].events->nextState = nextState;
+			pSm->pSMChain[stateID].events->nextEvent = NULL;
+		}
 	}
 	else
 	{
-		stateMachine_event_t *p = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
-		p->pEventForGoing = pEvent;
-		p->nextState = nextState;
-		p->nextEvent = NULL;
-		for (stateMachine_event_t *stEvent = pSm->pSMChain[stateID].events;;stEvent = stEvent->nextEvent)
-		{
-			if(IS_NULL(stEvent->nextEvent))
+		// stateMachine_event_t *p = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
+		dyMM = DynMemGet(sizeof(stateMachine_event_t));
+		if (IS_pSafe(dyMM)){
+			stateMachine_event_t *p = (stateMachine_event_t*)dyMM->addr;
+			p->pEventForGoing = pEvent;
+			p->nextState = nextState;
+			p->nextEvent = NULL;
+			for (stateMachine_event_t *stEvent = pSm->pSMChain[stateID].events;;stEvent = stEvent->nextEvent)
 			{
-				stEvent->nextEvent = p;
-				break;
+				if(IS_NULL(stEvent->nextEvent))
+				{
+					stEvent->nextEvent = p;
+					break;
+				}
 			}
 		}
 	}

@@ -1,4 +1,5 @@
 #include "memmory.h"
+#include <stdio.h>
  
 #define DMEM_BLOCK_SIZE         256      //内存块大小为128字节
 #define DMEM_BLOCK_NUM          20       //内存块个数为40个
@@ -27,7 +28,7 @@ typedef struct
 }DMEM_STATE;
  
 static uint8_t DMEMORY[DMEM_TOTAL_SIZE];
-static DMEM_STATE DMEMS = {0};
+static DMEM_STATE DMEMS;
 
 DMEM *DynMemGet(uint32_t size)
 {
