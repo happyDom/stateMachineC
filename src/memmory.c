@@ -4,7 +4,7 @@
 #define DMEM_BLOCK_SIZE         8      	//内存块大小(x字节)
 #define DMEM_BLOCK_NUM          128     //内存块个数
 #define DMEM_TOTAL_SIZE         (DMEM_BLOCK_SIZE*DMEM_BLOCK_NUM)    //内存总大小
- 
+
 typedef enum
 {
     DMEM_FREE   = 0,
