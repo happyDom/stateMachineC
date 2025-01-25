@@ -18,6 +18,8 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	dyMM = DynMemGet((sizeof(uint32_t) * pSm->stateIDs_Count));
 	if (IS_pSafe(dyMM)){
 		pSm->enterCounterOf = (uint32_t *)dyMM->addr;
+	}else{
+		while(1); //如果内存分配不成功，则死在这里
 	}
 	
 	pSm->buffer = NULL;
@@ -27,6 +29,8 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	dyMM = DynMemGet(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
 	if(IS_pSafe(dyMM)){
 		pSm->pSMChain = (stateMachineUnit_t *)dyMM->addr;
+	}else{
+		while(1); //如果内存分配不成功，则死在这里
 	}
 
 	//遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
@@ -90,33 +94,28 @@ void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, st
 	//如果要注册的stateID不合理，则退出
 	if (pSm->stateIDs_Count <= stateID){return;}
 	
+	dyMM = DynMemGet(sizeof(stateMachine_event_t));
+	if(!IS_pSafe(dyMM)){
+		while(1); //如果内存分配不成功，则死在这里
+	}
+
 	if(IS_NULL(pSm->pSMChain[stateID].events))
 	{
-		// pSm->pSMChain[stateID].events = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
-		dyMM = DynMemGet(sizeof(stateMachine_event_t));
-		if (IS_pSafe(dyMM)){
-			pSm->pSMChain[stateID].events = (stateMachine_event_t*)dyMM->addr;
-			pSm->pSMChain[stateID].events->pEventForGoing = pEvent;
-			pSm->pSMChain[stateID].events->nextState = nextState;
-			pSm->pSMChain[stateID].events->nextEvent = NULL;
-		}
-	}
-	else
-	{
-		// stateMachine_event_t *p = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
-		dyMM = DynMemGet(sizeof(stateMachine_event_t));
-		if (IS_pSafe(dyMM)){
-			stateMachine_event_t *p = (stateMachine_event_t*)dyMM->addr;
-			p->pEventForGoing = pEvent;
-			p->nextState = nextState;
-			p->nextEvent = NULL;
-			for (stateMachine_event_t *stEvent = pSm->pSMChain[stateID].events;;stEvent = stEvent->nextEvent)
+		pSm->pSMChain[stateID].events = (stateMachine_event_t*)dyMM->addr;
+		pSm->pSMChain[stateID].events->pEventForGoing = pEvent;
+		pSm->pSMChain[stateID].events->nextState = nextState;
+		pSm->pSMChain[stateID].events->nextEvent = NULL;
+	} else {
+		stateMachine_event_t *p = (stateMachine_event_t*)dyMM->addr;
+		p->pEventForGoing = pEvent;
+		p->nextState = nextState;
+		p->nextEvent = NULL;
+		for (stateMachine_event_t *stEvent = pSm->pSMChain[stateID].events;;stEvent = stEvent->nextEvent)
+		{
+			if(IS_NULL(stEvent->nextEvent))
 			{
-				if(IS_NULL(stEvent->nextEvent))
-				{
-					stEvent->nextEvent = p;
-					break;
-				}
+				stEvent->nextEvent = p;
+				break;
 			}
 		}
 	}
