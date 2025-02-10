@@ -1,5 +1,5 @@
 #include "stateMachine.h"
-#include "dynamicMemory.h"
+#include "dynamicMemmory.h"
 #include <stdio.h>
 
 DMEM *dyMM;
