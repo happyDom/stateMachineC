@@ -2,7 +2,15 @@
 #define C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 
 #include <stdint.h>
-#include <stdbool.h>
+
+typedef enum{
+	false=0,
+	true=1
+} _dyyBool;
+
+#ifndef bool
+#define bool _dyyBool
+#endif
 
 #define IS_NULL(p) (NULL == p)
 #define IS_pSafe(p) (NULL != p)

@@ -1,7 +1,6 @@
 #include "stateMachine.h"
-#include "memmory.h"
+#include "dynamicMemory.h"
 #include <stdio.h>
-// #include <stdlib.h>
 
 DMEM *dyMM;
 
@@ -14,7 +13,6 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->stateIDs_Count = stateIDs_count;
 	pSm->stateID = pSm->stateID_default;
 	pSm->roundCounter = 0;
-	// pSm->enterCounterOf = (uint32_t *)malloc(sizeof(uint32_t) * pSm->stateIDs_Count);
 	dyMM = DynMemGet((sizeof(uint32_t) * pSm->stateIDs_Count));
 	if (IS_pSafe(dyMM)){
 		pSm->enterCounterOf = (uint32_t *)dyMM->addr;
@@ -25,7 +23,6 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->buffer = NULL;
 	pSm->latched = false;
 
-	// pSm->pSMChain = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
 	dyMM = DynMemGet(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
 	if(IS_pSafe(dyMM)){
 		pSm->pSMChain = (stateMachineUnit_t *)dyMM->addr;

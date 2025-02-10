@@ -1,4 +1,4 @@
-#include "memmory.h"
+#include "dynamicMemory.h"
 #include <stdio.h>
  
 #define DMEM_BLOCK_SIZE         4      	//内存块大小(x字节)
