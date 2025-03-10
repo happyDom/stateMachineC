@@ -55,6 +55,7 @@ struct stateMachine_s
 	bool latched;					//状态机锁，为真时，状态机不运行任何状态的动作，不检测任何事件
 	uint32_t *enterCounterOf;		//一个数组，用于记录状态机中每一个状态出现的次数，在对应状态退出时进行计数
 	stateMachineUnit_t *pSMChain;	//存放状态单元的数组空间的地址
+	void (*actionBeforeStateChange)(stateMachineUnit_t *); //状态切换前要做的动作
 	uint8_t stateID;				//标记当前状态机的状态
 	uint8_t stateID_default;		//状态机的默认状态
 	uint8_t stateIDs_Count;			//状态机的总状态数
@@ -72,5 +73,8 @@ void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(state
 
 //运行一次指定的状态机
 void fsm_run(stateMachine_t *pSm);
+
+//提供一个接口，用于获取内存池中剩余内存块的最小值，为合理优化内存池大小做为参考
+uint16_t dyMM_reservedBlks_min(void);
 
 #endif /* C0FD9D79_317D_44BD_BF7F_E51B5C4F850C */

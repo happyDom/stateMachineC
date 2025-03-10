@@ -1,9 +1,9 @@
-#include "dynamicMemmory.h"
+#include "stateMachineMemmory.h"
 #include <stdio.h>
  
-#define DMEM_BLOCK_SIZE         4      	//内存块大小(x字节)
-#define DMEM_BLOCK_NUM          128     //内存块个数
-#define DMEM_TOTAL_SIZE         (DMEM_BLOCK_SIZE*DMEM_BLOCK_NUM)    //内存总大小
+#define DMEM_BLOCK_SIZE         4      	//内存块大小(x字节)，这取决于实际申请内存时的最小公约数值
+#define DMEM_BLOCK_NUM          128     //内存块个数，可以根据自己的实际状态数量和事件数量，调整到合适的大小
+#define DMEM_TOTAL_SIZE         (DMEM_BLOCK_SIZE * DMEM_BLOCK_NUM)    //内存总大小
 
 typedef enum
 {
@@ -23,32 +23,36 @@ typedef struct
     DMEM_USED_ITEM  tb_blk[DMEM_BLOCK_NUM];
     DMEM            tb_user[DMEM_BLOCK_NUM];        //用户申请内存信息
     DMEM_APPLY      tb_apply[DMEM_BLOCK_NUM];       //系统分配内存信息
-    uint16_t        apply_num;      //内存申请表占用数目
-    uint16_t        blk_num;        //内存块占用数目
+    uint16_t        apply_num;                      //内存申请表占用数目
+    uint16_t        blk_num;                        //内存块占用数目
 }DMEM_STATE;
  
 static uint8_t DMEMORY[DMEM_TOTAL_SIZE];
 static DMEM_STATE DMEMS;
+#ifdef dyMM__DEBUG
+uint16_t __reservedBlock_num_min = DMEM_BLOCK_NUM;          //剩余内存快数量的最小值
+#endif
 
 DMEM *DynMemGet(uint32_t size)
 {
     uint16_t loop = 0;
     uint16_t find = 0;
     uint16_t blk_num_want = 0;
-    DMEM * user = NULL;
+    uint16_t size16 = (uint16_t)size;
+    DMEM *user = NULL;
     DMEM_APPLY *apply = NULL;
     
     //申请内存大小不能为0
-    if(size == 0)               {   return NULL;    }
+    if(size16 == 0)               {   return NULL;    }
     //申请内存不可超过总内存大小
-    if(size > DMEM_TOTAL_SIZE)  {   return NULL;    }
+    if(size16 > DMEM_TOTAL_SIZE)  {   return NULL;    }
     //申请内存不可超过剩余内存大小
-    if(size > (DMEM_BLOCK_NUM - DMEMS.blk_num) * DMEM_BLOCK_SIZE)   {   return NULL;    }
+    if(size16 > (DMEM_BLOCK_NUM - DMEMS.blk_num) * DMEM_BLOCK_SIZE)   {   return NULL;    }
     //申请表必须有空余
     if(DMEMS.apply_num >= DMEM_BLOCK_NUM)   {   return NULL;    }
     
     //计算所需连续块的个数
-    blk_num_want = (size + DMEM_BLOCK_SIZE - 1) / DMEM_BLOCK_SIZE;
+    blk_num_want = (size16 + DMEM_BLOCK_SIZE - 1) / DMEM_BLOCK_SIZE;
     
     //寻找申请表
     for(loop = 0; loop < DMEM_BLOCK_NUM; loop++)
@@ -90,6 +94,12 @@ DMEM *DynMemGet(uint32_t size)
                 apply->used = DMEM_USED;                        //标记申请表已使用
                 DMEMS.apply_num += 1;
                 DMEMS.blk_num += blk_num_want;
+
+                #ifdef dyMM__DEBUG // 如果申请成功，计算剩余的内存块数量
+                if(DMEM_BLOCK_NUM < __reservedBlock_num_min + apply->blk_s + apply->blk_num){
+                    __reservedBlock_num_min = DMEM_BLOCK_NUM - apply->blk_s - apply->blk_num;
+                }
+                #endif
                 
                 return user;
             }
@@ -99,12 +109,12 @@ DMEM *DynMemGet(uint32_t size)
             }
         }
     }
-    
+
     //搜索整个内存块，未找到大小适合的空间
     return NULL;
 }
 
-void DynMemPut(DMEM *user)
+void DynMemFree(DMEM *user)
 {
     uint16_t loop = 0;
     //若参数为空，直接返回
@@ -120,3 +130,9 @@ void DynMemPut(DMEM *user)
     DMEMS.tb_apply[user->tb].used = DMEM_FREE;
     DMEMS.apply_num -= 1;
 }
+
+#ifdef dyMM__DEBUG
+uint16_t getReservedBlock_num_min(void){
+    return __reservedBlock_num_min;
+}
+#endif

@@ -45,6 +45,8 @@ void smDemoBuild()
     fsm_eventSingUp(&demoSM, c, a, pressA);
     fsm_eventSingUp(&demoSM, d, a, pressA);
     fsm_eventSingUp(&demoSM, d, b, pressB);
+
+    printf("the reserved blocks num is: %d\n", dyMM_reservedBlks_min());
 }
 
 /*

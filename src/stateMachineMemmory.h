@@ -1,5 +1,7 @@
 #ifndef __MEMORY_H__
 #define __MEMORY_H__
+#define dyMM__DEBUG
+
 #include "stdint.h"
 
 //用户使用
@@ -12,6 +14,10 @@ typedef struct
  
 //若返回空，则申请失败
 DMEM *DynMemGet(uint32_t size);
-void DynMemPut(DMEM *pDmem);
+void DynMemFree(DMEM *pDmem);
+
+#ifdef dyMM__DEBUG
+uint16_t getReservedBlock_num_min(void);
+#endif
  
 #endif //__MEMORY_H__
