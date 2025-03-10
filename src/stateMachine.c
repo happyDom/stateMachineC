@@ -142,14 +142,18 @@ void fsm_run(stateMachine_t *pSm)
 	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
 	if (IS_NULL(pSm)){return;}
 
-	if(pSm->latched){//如果状态机被锁，则只增加计数器，不运行任何实际逻辑
-		pSm->roundCounter++;
+	pSm->roundCounter++;
+	if(pSm->latched){//如果状态机被锁，则不运行任何实际逻辑
 		return;
 	}
+
 	//获取当前的状态单元
 	stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
 	stateMachineUnit_t *stNew = NULL;
 
+	//更新当前状态的计数值
+	st->roundCounter++;
+	
 	//如果是第一次轮询状态机，则需要先执行一次Enter动作 和Do动作
 	if (pSm->stateIDs_Count == st->stateID_l){
 		st->roundCounter = 0;		//复位状态计数
@@ -179,12 +183,6 @@ void fsm_run(stateMachine_t *pSm)
 				}
 			}
 		}
-
-		//更新状态机的计数值
-		pSm->roundCounter++;
-
-		//更新当前状态的计数值
-		st->roundCounter++;
 
 		//如果进入了新的状态
 		if(IS_pSafe(stNew))
