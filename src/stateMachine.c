@@ -20,10 +20,12 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 		while(1); //如果内存分配不成功，则死在这里
 	}
 	
+	#ifdef dyMM__DEBUG
 	printf("sizeof uint32_t is %d\n", sizeof(uint32_t));
 	printf("sizeof stateMachineUnit_t is %d\n", sizeof(stateMachineUnit_t));
 	printf("sizeof stateMachine_event_t is %d\n", sizeof(stateMachine_event_t));
-
+	#endif
+	
 	pSm->buffer = NULL;
 	pSm->latched = false;
 

@@ -30,7 +30,7 @@ stateMachine_eventResult_t pressD(stateMachineUnit_t *pSt) {return 'd' == inputK
 void smDemoBuild()
 {
     fsm_init(&demoSM, stateID_end, 0);
-    fsm_init(&abcSM,2,0);
+    // fsm_init(&abcSM,2,0);
     
     // 注册状态动作
     fsm_actionSignUp(&demoSM, a, actionEntry, actionDo, actionExit);
