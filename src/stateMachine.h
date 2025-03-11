@@ -49,7 +49,8 @@ struct stateMachine_s
 	bool latched;					//状态机锁，为真时，状态机不运行任何状态的动作，不检测任何事件
 	uint32_t *enterCounterOf;		//一个数组，用于记录状态机中每一个状态出现的次数，在对应状态退出时进行计数
 	stateMachineUnit_t *pSMChain;	//存放状态单元的数组空间的地址
-	void (*actionBeforeStateChange)(stateMachineUnit_t *); //状态切换前要做的动作
+	void (*actionOnChangeBeforeEnter)(stateMachineUnit_t *); //状态切换前要做的动作
+	void (*actionAfterDo)(stateMachineUnit_t *); //在每个do事件后执行的动作
 	uint8_t stateID;				//标记当前状态机的状态
 	uint8_t stateID_default;		//状态机的默认状态
 	uint8_t stateIDs_Count;			//状态机的总状态数
