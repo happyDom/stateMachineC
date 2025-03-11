@@ -164,7 +164,7 @@ void fsm_run(stateMachine_t *pSm)
 	if (pSm->stateIDs_Count == st->stateID_l){
 		st->roundCounter = 0;		//复位状态计数
 		st->stateID_l = st->stateID;
-		if(IS_pSafe(pSm->actionBeforeStateChange)) {pSm->actionBeforeStateChange(st);}	//如果注册有状态切换事件，则执行之
+		if(IS_pSafe(pSm->actionOnChangeBeforeEnter)) {pSm->actionOnChangeBeforeEnter(st);}	//如果注册有状态切换事件，则执行之
 		if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}	//如果有enter事件，则执行之
 		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}		//如果有do事件，则执行之
 	}else{
@@ -207,7 +207,7 @@ void fsm_run(stateMachine_t *pSm)
 			pSm->enterCounterOf[st->stateID]++;
 
 			stNew->roundCounter = 0;	//复位新状态计数器
-			if(IS_pSafe(pSm->actionBeforeStateChange)) {pSm->actionBeforeStateChange(stNew);}	//如果注册有状态切换事件，则执行之
+			if(IS_pSafe(pSm->actionOnChangeBeforeEnter)) {pSm->actionOnChangeBeforeEnter(stNew);}	//如果注册有状态切换事件，则执行之
 			if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
 			if(IS_pSafe(stNew->actions.pDoAction)) {stNew->actions.pDoAction(stNew);}		//执行新状态的 do 动作
 		}else{//如果继续留在当前状态，则执行当前状态的逗留活动
@@ -220,5 +220,7 @@ void fsm_run(stateMachine_t *pSm)
 uint16_t dyMM_reservedBlks_min(void){
 	#ifdef dyMM__DEBUG
 	return getReservedBlock_num_min();
+	#else
+	return 0;
 	#endif
 }

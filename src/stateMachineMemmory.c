@@ -135,10 +135,8 @@ void DynMemFree(DMEM *user)
     DMEMS.apply_num -= 1;
 }
 
+#ifdef dyMM__DEBUG
 uint16_t getReservedBlock_num_min(void){
-    #ifdef dyMM__DEBUG
     return __reservedBlock_num_min;
-    #else
-    return 0;
-    #endif
 }
+#endif
