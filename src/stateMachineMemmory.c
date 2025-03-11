@@ -1,6 +1,10 @@
 #include "stateMachineMemmory.h"
 #include <stdio.h>
- 
+
+/**
+ * 这里会预告在stack上申请一块指定大小的内存空间，用于后续应用层的动态申请，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
+ */
+
 #define DMEM_BLOCK_SIZE         4      	//内存块大小(x字节)，这取决于实际申请内存时的最小公约数值
 #define DMEM_BLOCK_NUM          128     //内存块个数，可以根据自己的实际状态数量和事件数量，调整到合适的大小
 #define DMEM_TOTAL_SIZE         (DMEM_BLOCK_SIZE * DMEM_BLOCK_NUM)    //内存总大小
@@ -30,7 +34,7 @@ typedef struct
 static uint8_t DMEMORY[DMEM_TOTAL_SIZE];
 static DMEM_STATE DMEMS;
 #ifdef dyMM__DEBUG
-uint16_t __reservedBlock_num_min = DMEM_BLOCK_NUM;          //剩余内存快数量的最小值
+static uint16_t __reservedBlock_num_min = DMEM_BLOCK_NUM;          //剩余内存快数量的最小值
 #endif
 
 DMEM *DynMemGet(uint32_t size)
@@ -131,8 +135,10 @@ void DynMemFree(DMEM *user)
     DMEMS.apply_num -= 1;
 }
 
-#ifdef dyMM__DEBUG
 uint16_t getReservedBlock_num_min(void){
+    #ifdef dyMM__DEBUG
     return __reservedBlock_num_min;
+    #else
+    return 0;
+    #endif
 }
-#endif
