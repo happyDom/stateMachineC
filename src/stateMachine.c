@@ -167,6 +167,7 @@ void fsm_run(stateMachine_t *pSm)
 		if(IS_pSafe(pSm->actionOnChangeBeforeEnter)) {pSm->actionOnChangeBeforeEnter(st);}	//如果注册有状态切换事件，则执行之
 		if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}	//如果有enter事件，则执行之
 		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}		//如果有do事件，则执行之
+		if(IS_pSafe(pSm->actionAfterDo)) {pSm->actionAfterDo(st);}				//如果有actionAfterDo事件，则执行之
 	}else{
 		//如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
 		if(IS_pSafe(st->events) && !st->latched){
@@ -210,9 +211,11 @@ void fsm_run(stateMachine_t *pSm)
 			if(IS_pSafe(pSm->actionOnChangeBeforeEnter)) {pSm->actionOnChangeBeforeEnter(stNew);}	//如果注册有状态切换事件，则执行之
 			if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
 			if(IS_pSafe(stNew->actions.pDoAction)) {stNew->actions.pDoAction(stNew);}		//执行新状态的 do 动作
+			if(IS_pSafe(pSm->actionAfterDo)) {pSm->actionAfterDo(st);}				//如果有actionAfterDo事件，则执行之
 		}else{//如果继续留在当前状态，则执行当前状态的逗留活动
 			//执行本状态的逗留活动
 			if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
+			if(IS_pSafe(pSm->actionAfterDo)) {pSm->actionAfterDo(st);}				//如果有actionAfterDo事件，则执行之
 		}
 	}
 }
