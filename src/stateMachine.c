@@ -1,4 +1,8 @@
 #include "stateMachine.h"
+#include "stateMachineMemmory.h"
+#include <stdio.h>
+
+DMEM *dyMM;
 
 /*
 初始化状态机
@@ -9,11 +13,28 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->stateIDs_Count = stateIDs_count;
 	pSm->stateID = pSm->stateID_default;
 	pSm->roundCounter = 0;
-	pSm->enterCounterOf = (uint32_t *)malloc(sizeof(uint32_t) * pSm->stateIDs_Count);
+	dyMM = DynMemGet((sizeof(uint32_t) * pSm->stateIDs_Count));
+	if (IS_pSafe(dyMM)){
+		pSm->enterCounterOf = (uint32_t *)dyMM->addr;
+	}else{
+		while(1); //如果内存分配不成功，则死在这里
+	}
+	
+	#ifdef dyMM__DEBUG
+	printf("sizeof uint32_t is %d\n", sizeof(uint32_t));
+	printf("sizeof stateMachineUnit_t is %d\n", sizeof(stateMachineUnit_t));
+	printf("sizeof stateMachine_event_t is %d\n", sizeof(stateMachine_event_t));
+	#endif
+	
 	pSm->buffer = NULL;
 	pSm->latched = false;
 
-	pSm->pSMChain = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
+	dyMM = DynMemGet(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
+	if(IS_pSafe(dyMM)){
+		pSm->pSMChain = (stateMachineUnit_t *)dyMM->addr;
+	}else{
+		while(1); //如果内存分配不成功，则死在这里
+	}
 
 	//遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
 	for(int i=0; i < pSm->stateIDs_Count; i++)
@@ -76,16 +97,19 @@ void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, st
 	//如果要注册的stateID不合理，则退出
 	if (pSm->stateIDs_Count <= stateID){return;}
 	
+	dyMM = DynMemGet(sizeof(stateMachine_event_t));
+	if(!IS_pSafe(dyMM)){
+		while(1); //如果内存分配不成功，则死在这里
+	}
+
 	if(IS_NULL(pSm->pSMChain[stateID].events))
 	{
-		pSm->pSMChain[stateID].events = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
+		pSm->pSMChain[stateID].events = (stateMachine_event_t*)dyMM->addr;
 		pSm->pSMChain[stateID].events->pEventForGoing = pEvent;
 		pSm->pSMChain[stateID].events->nextState = nextState;
 		pSm->pSMChain[stateID].events->nextEvent = NULL;
-	}
-	else
-	{
-		stateMachine_event_t *p = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
+	} else {
+		stateMachine_event_t *p = (stateMachine_event_t*)dyMM->addr;
 		p->pEventForGoing = pEvent;
 		p->nextState = nextState;
 		p->nextEvent = NULL;
@@ -128,14 +152,13 @@ void fsm_run(stateMachine_t *pSm)
 	if(pSm->latched){//如果状态机被锁，则不运行任何实际逻辑
 		return;
 	}
-	
 	//获取当前的状态单元
 	stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
 	stateMachineUnit_t *stNew = NULL;
 
 	//更新当前状态的计数值
 	st->roundCounter++;
-
+	
 	//如果是第一次轮询状态机，则需要先执行一次Enter动作 和Do动作
 	if (pSm->stateIDs_Count == st->stateID_l){
 		st->roundCounter = 0;		//复位状态计数
@@ -143,7 +166,7 @@ void fsm_run(stateMachine_t *pSm)
 		if(IS_pSafe(pSm->actionOnChangeBeforeEnter)) {pSm->actionOnChangeBeforeEnter(st);}	//如果注册有状态切换事件，则执行之
 		if(IS_pSafe(st->actions.pEnterAction)) {st->actions.pEnterAction(st);}	//如果有enter事件，则执行之
 		if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}		//如果有do事件，则执行之
-		if(IS_pSafe(pSm->actionAfterDo)) {pSm->actionAfterDo(st);}				//如果有 afterDo 事件，则执行之
+		if(IS_pSafe(pSm->actionAfterDo)) {pSm->actionAfterDo(st);}				//如果有actionAfterDo事件，则执行之
 	}else{
 		//如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
 		if(IS_pSafe(st->events) && !st->latched){
@@ -186,12 +209,20 @@ void fsm_run(stateMachine_t *pSm)
 			stNew->roundCounter = 0;	//复位新状态计数器
 			if(IS_pSafe(pSm->actionOnChangeBeforeEnter)) {pSm->actionOnChangeBeforeEnter(stNew);}	//如果注册有状态切换事件，则执行之
 			if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
-			if(IS_pSafe(stNew->actions.pDoAction)) {stNew->actions.pDoAction(stNew);}	//执行新状态的 do 动作
-			if(IS_pSafe(pSm->actionAfterDo)) {pSm->actionAfterDo(st);}				//如果有 afterDo 事件，则执行之
+			if(IS_pSafe(stNew->actions.pDoAction)) {stNew->actions.pDoAction(stNew);}		//执行新状态的 do 动作
+			if(IS_pSafe(pSm->actionAfterDo)) {pSm->actionAfterDo(st);}				//如果有actionAfterDo事件，则执行之
 		}else{//如果继续留在当前状态，则执行当前状态的逗留活动
 			//执行本状态的逗留活动
 			if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}
-			if(IS_pSafe(pSm->actionAfterDo)) {pSm->actionAfterDo(st);}				//如果有 afterDo 事件，则执行之
+			if(IS_pSafe(pSm->actionAfterDo)) {pSm->actionAfterDo(st);}				//如果有actionAfterDo事件，则执行之
 		}
 	}
+}
+
+uint16_t dyMM_reservedBlks_min(void){
+	#ifdef dyMM__DEBUG
+	return getReservedBlock_num_min();
+	#else
+	return 0;
+	#endif
 }

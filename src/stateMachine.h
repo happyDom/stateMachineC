@@ -1,10 +1,16 @@
 #ifndef C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #define C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
-#include <stdbool.h>
+
+typedef enum{
+	false=0,
+	true=1
+} _dyyBool;
+
+#ifndef bool
+#define bool _dyyBool
+#endif
 
 #define IS_NULL(p) (NULL == p)
 #define IS_pSafe(p) (NULL != p)
@@ -68,5 +74,8 @@ void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(state
 
 //运行一次指定的状态机
 void fsm_run(stateMachine_t *pSm);
+
+//提供一个接口，用于获取内存池中剩余内存块的最小值，为合理优化内存池大小做为参考
+uint16_t dyMM_reservedBlks_min(void);
 
 #endif /* C0FD9D79_317D_44BD_BF7F_E51B5C4F850C */
