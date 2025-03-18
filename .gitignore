@@ -186,3 +186,6 @@ cython_debug/
 # 忽略百度云同步文件
 *baiduyun*
 *.lock
+
+.vscode
+Makefile
