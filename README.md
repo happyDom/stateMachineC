@@ -101,7 +101,7 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
     void actionExit(stateMachineUnit_t *pSt)
     {
         //状态机的退出事件
-        printf("state exchanged： %c", keys[pSt->stateID]);
+        printf("state exchanged: %c", keys[pSt->stateID]);
     }
     ```
 
