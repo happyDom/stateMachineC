@@ -34,7 +34,7 @@ typedef struct
 static uint8_t DMEMORY[DMEM_TOTAL_SIZE];
 static DMEM_STATE DMEMS;
 #ifdef dyMM__DEBUG
-static uint16_t __reservedBlock_num_min = DMEM_BLOCK_NUM;          //剩余内存快数量的最小值
+static uint16_t blockUsed = 0;          //已经被实用过的内存块数量
 #endif
 
 DMEM *DynMemGet(uint32_t size)
@@ -100,8 +100,8 @@ DMEM *DynMemGet(uint32_t size)
                 DMEMS.blk_num += blk_num_want;
 
                 #ifdef dyMM__DEBUG // 如果申请成功，计算剩余的内存块数量
-                if(DMEM_BLOCK_NUM < __reservedBlock_num_min + apply->blk_s + apply->blk_num){
-                    __reservedBlock_num_min = DMEM_BLOCK_NUM - apply->blk_s - apply->blk_num;
+                if(blockUsed < apply->blk_s + apply->blk_num){
+                    blockUsed = apply->blk_s + apply->blk_num;
                 }
                 #endif
                 
@@ -135,9 +135,9 @@ void DynMemFree(DMEM *user)
     DMEMS.apply_num -= 1;
 }
 
-uint16_t getReservedBlock_num_min(void){
+uint16_t getBlocksNumOfUsed(void){
     #ifdef dyMM__DEBUG
-    return __reservedBlock_num_min;
+    return blockUsed;
     #else
     return 0;
     #endif

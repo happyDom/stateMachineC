@@ -36,15 +36,18 @@ stateMachine_eventResult_t pressD(stateMachineUnit_t *pSt) {return 'd' == inputK
 
 void smDemoBuild()
 {
-    fsm_init(&demoSM, stateID_end, 0);
+    fsm_init(&demoSM, stateID_count, 0);
     
     // 注册状态动作
+    // 为每一个状态指定进入事件，逗留事件和退出事件
+    // 如果你的某些状态不需要全部的事件，则将不需要对应事件的位置使用NULL做入参即可
     demoSM.actionSignUp(&demoSM, a, actionEntry, actionDo, actionExit);
     demoSM.actionSignUp(&demoSM, b, actionEntry, actionDo, actionExit);
     demoSM.actionSignUp(&demoSM, c, actionEntry, actionDo, actionExit);
     demoSM.actionSignUp(&demoSM, d, actionEntry, actionDo, actionExit);
     
     // 注册状态事件
+    // 为每个状态跳转路径，指定对应的事件
     demoSM.eventSingUp(&demoSM, a, b, pressB);
     demoSM.eventSingUp(&demoSM, a, c, pressC);
     demoSM.eventSingUp(&demoSM, b, d, pressD);
@@ -52,7 +55,8 @@ void smDemoBuild()
     demoSM.eventSingUp(&demoSM, d, a, pressA);
     demoSM.eventSingUp(&demoSM, d, b, pressB);
 
-    printf("the reserved blocks num is: %d\n", dyMM_reservedBlks_min());
+    //状态机配置完成后，打印状态机使用的内存块的数量
+    printf("the blockSize needed is: %d\n", dyMM_blocksNumOfUsed());
 }
 
 /*

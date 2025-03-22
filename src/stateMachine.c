@@ -223,9 +223,9 @@ static void __run(stateMachine_t *pSm)
 	}
 }
 
-uint16_t dyMM_reservedBlks_min(void){
+uint16_t dyMM_blocksNumOfUsed(void){
 	#ifdef dyMM__DEBUG
-	return getReservedBlock_num_min();
+	return getBlocksNumOfUsed();
 	#else
 	return 0;
 	#endif

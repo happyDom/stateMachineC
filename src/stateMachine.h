@@ -76,6 +76,6 @@ struct stateMachine_s
 void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default);
 
 //提供一个接口，用于获取内存池中剩余内存块的最小值，为合理优化内存池大小做为参考
-uint16_t dyMM_reservedBlks_min(void);
+uint16_t dyMM_blocksNumOfUsed(void);
 
 #endif /* C0FD9D79_317D_44BD_BF7F_E51B5C4F850C */
