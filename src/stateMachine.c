@@ -70,20 +70,19 @@ static void __reset(stateMachine_t *pSm)
 
 		st->latched = false;													//解除当前状态的状态锁
 		if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}	//执行当前状的退出事件
-		
 		//考虑到状态机复位后，状态机未必能及时轮询运行（例如子状态的状态机，依懒于父状态机的轮询调用），所以：
 		//新状态的 enter 事件，将在状态机轮询时执行，这样可以保障状态机执行是连续的
 		
 		//复位状态机
 		pSm->roundCounter = 0;	//复位状态机的轮询次数
 		pSm->stateID = pSm->stateID_default;
-		pSm->pSMChain[pSm->stateID_default].stateID_l = pSm->stateIDs_Count;
-		pSm->pSMChain[pSm->stateID_default].latched = false;					//复位状态锁
 
 		//复位各状态出现的次数值
 		for(int i=0; i < pSm->stateIDs_Count; i++)
 		{
 			pSm->enterCounterOf[i] = 0;
+			pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;
+			pSm->pSMChain[i].latched = false;
 		}
 	}
 }
