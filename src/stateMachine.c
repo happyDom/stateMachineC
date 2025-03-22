@@ -155,6 +155,7 @@ static void __run(stateMachine_t *pSm)
 	if(pSm->latched){//如果状态机被锁，则不运行任何实际逻辑
 		return;
 	}
+
 	//获取当前的状态单元
 	stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
 	stateMachineUnit_t *stNew = NULL;
@@ -164,6 +165,7 @@ static void __run(stateMachine_t *pSm)
 	
 	//如果是第一次轮询状态机，则需要先执行一次Enter动作 和Do动作
 	if (pSm->stateIDs_Count == st->stateID_l){
+		pSm->roundCounter = 0;		//状态状态机计数
 		st->roundCounter = 0;		//复位状态计数
 		st->stateID_l = st->stateID;
 		if(IS_pSafe(pSm->actionOnChangeBeforeEnter)) {pSm->actionOnChangeBeforeEnter(st);}	//如果注册有状态切换事件，则执行之
@@ -211,9 +213,9 @@ static void __run(stateMachine_t *pSm)
 
 			stNew->roundCounter = 0;	//复位新状态计数器
 			if(IS_pSafe(pSm->actionOnChangeBeforeEnter)) {pSm->actionOnChangeBeforeEnter(stNew);}	//如果注册有状态切换事件，则执行之
-			if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}	//执行新状态的 enter 动作
-			if(IS_pSafe(stNew->actions.pDoAction)) {stNew->actions.pDoAction(stNew);}		//执行新状态的 do 动作
-			if(IS_pSafe(pSm->actionAfterDo)) {pSm->actionAfterDo(st);}				//如果有actionAfterDo事件，则执行之
+			if(IS_pSafe(stNew->actions.pEnterAction)) {stNew->actions.pEnterAction(stNew);}			//执行新状态的 enter 动作
+			if(IS_pSafe(stNew->actions.pDoAction)) {stNew->actions.pDoAction(stNew);}				//执行新状态的 do 动作
+			if(IS_pSafe(pSm->actionAfterDo)) {pSm->actionAfterDo(stNew);}							//如果有actionAfterDo事件，则执行之
 		}else{//如果继续留在当前状态，则执行当前状态的逗留活动
 			//执行本状态的逗留活动
 			if(IS_pSafe(st->actions.pDoAction)) {st->actions.pDoAction(st);}

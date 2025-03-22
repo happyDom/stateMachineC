@@ -8,17 +8,25 @@ stateMachine_t demoSM;
 
 void actionEntry(stateMachineUnit_t *pSt)
 {
-    printf("%c is pressed, state enter  to: %c\n", inputKey, keys[pSt->stateID]);
+    if(pSt->pSm->roundCounter == 0){
+        //状态机首次运行时
+        printf("the current state is: %c\n", keys[pSt->stateID]);
+    }else{
+        //状态机切换进入某一状态时
+        printf(" --> %c\n", keys[pSt->stateID]);
+    }
 }
 
 void actionDo(stateMachineUnit_t *pSt)
 {
-    printf("roundCounter of %c is %d\n", keys[pSt->stateID], pSt->roundCounter);
+    //状态机的do事件
+    printf("----roundCounter of %c is %d\n", keys[pSt->stateID], pSt->roundCounter);
 }
 
 void actionExit(stateMachineUnit_t *pSt)
 {
-    printf("%c is pressed, state exist from: %c\n", inputKey, keys[pSt->stateID]);
+    //状态机的退出事件
+    printf("state exchanged： %c", keys[pSt->stateID]);
 }
 
 stateMachine_eventResult_t pressA(stateMachineUnit_t *pSt) {return 'a' == inputKey;};
