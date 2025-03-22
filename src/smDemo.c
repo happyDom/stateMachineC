@@ -26,7 +26,7 @@ void actionDo(stateMachineUnit_t *pSt)
 void actionExit(stateMachineUnit_t *pSt)
 {
     //状态机的退出事件
-    printf("state exchanged： %c", keys[pSt->stateID]);
+    printf("state exchanged: %c", keys[pSt->stateID]);
 }
 
 stateMachine_eventResult_t pressA(stateMachineUnit_t *pSt) {return 'a' == inputKey;};
