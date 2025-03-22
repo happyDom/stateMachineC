@@ -1,6 +1,5 @@
 #ifndef C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #define C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
-
 #include <stdint.h>
 
 typedef enum{
@@ -62,18 +61,19 @@ struct stateMachine_s
 	uint8_t stateIDs_Count;			//状态机的总状态数
 	uint32_t roundCounter;			//记录状态机的轮询次数
 	void *buffer;					//一个buffer，用于存放与实际实用场景相关的状态数据
+
+	//复位状态机：将状态机的运行状态复位到默认状态
+	void (*reset)(stateMachine_t *pSm);
+	//向指定的状态注册事件
+	void (*eventSingUp)(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, stateMachine_eventResult_t (*pEventForGoing)(stateMachineUnit_t *));
+	void (*actionSignUp)(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(stateMachineUnit_t *), void (*pDo)(stateMachineUnit_t *), void (*pExist)(stateMachineUnit_t *));
+
+	//运行一次指定的状态机
+	void (*run)(stateMachine_t *pSm);
 };
 
 //初始化状态表
 void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default);
-//复位状态机：将状态机的运行状态复位到默认状态
-void fsm_reset(stateMachine_t *pSm);
-//向指定的状态注册事件
-void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, stateMachine_eventResult_t (*pEventForGoing)(stateMachineUnit_t *));
-void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(stateMachineUnit_t *), void (*pDo)(stateMachineUnit_t *), void (*pExist)(stateMachineUnit_t *));
-
-//运行一次指定的状态机
-void fsm_run(stateMachine_t *pSm);
 
 //提供一个接口，用于获取内存池中剩余内存块的最小值，为合理优化内存池大小做为参考
 uint16_t dyMM_reservedBlks_min(void);

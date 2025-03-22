@@ -8,7 +8,9 @@ int main(int argc, char const *argv[])
     {
         printf("please input a key: ");
         inputKey = getchar();
-        smDemoRun();
+        if(inputKey >= 'a' && inputKey <='z'){
+            smDemoRun();
+        }
     }
     
     return 0;

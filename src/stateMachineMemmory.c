@@ -6,7 +6,7 @@
  */
 
 #define DMEM_BLOCK_SIZE         4      	//内存块大小(x字节)，这取决于实际申请内存时的最小公约数值
-#define DMEM_BLOCK_NUM          128     //内存块个数，可以根据自己的实际状态数量和事件数量，调整到合适的大小
+#define DMEM_BLOCK_NUM          1024     //内存块个数，引处建议设置一个比较大的数字，待项目定形后，再调整到合适的大小
 #define DMEM_TOTAL_SIZE         (DMEM_BLOCK_SIZE * DMEM_BLOCK_NUM)    //内存总大小
 
 typedef enum
@@ -135,8 +135,10 @@ void DynMemFree(DMEM *user)
     DMEMS.apply_num -= 1;
 }
 
-#ifdef dyMM__DEBUG
 uint16_t getReservedBlock_num_min(void){
+    #ifdef dyMM__DEBUG
     return __reservedBlock_num_min;
+    #else
+    return 0;
+    #endif
 }
-#endif

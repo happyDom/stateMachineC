@@ -5,7 +5,6 @@ char keys[7] = {'a','b','c','d','e','f','g'};
 
 char inputKey;
 stateMachine_t demoSM;
-stateMachine_t abcSM;
 
 void actionEntry(stateMachineUnit_t *pSt)
 {
@@ -30,21 +29,20 @@ stateMachine_eventResult_t pressD(stateMachineUnit_t *pSt) {return 'd' == inputK
 void smDemoBuild()
 {
     fsm_init(&demoSM, stateID_end, 0);
-    // fsm_init(&abcSM,2,0);
     
     // 注册状态动作
-    fsm_actionSignUp(&demoSM, a, actionEntry, actionDo, actionExit);
-    fsm_actionSignUp(&demoSM, b,actionEntry, actionDo, actionExit);
-    fsm_actionSignUp(&demoSM, c,actionEntry, actionDo, actionExit);
-    fsm_actionSignUp(&demoSM, d,actionEntry, actionDo, actionExit);
+    demoSM.actionSignUp(&demoSM, a, actionEntry, actionDo, actionExit);
+    demoSM.actionSignUp(&demoSM, b, actionEntry, actionDo, actionExit);
+    demoSM.actionSignUp(&demoSM, c, actionEntry, actionDo, actionExit);
+    demoSM.actionSignUp(&demoSM, d, actionEntry, actionDo, actionExit);
     
     // 注册状态事件
-    fsm_eventSingUp(&demoSM, a, b, pressB);
-    fsm_eventSingUp(&demoSM, a, c, pressC);
-    fsm_eventSingUp(&demoSM, b, d, pressD);
-    fsm_eventSingUp(&demoSM, c, a, pressA);
-    fsm_eventSingUp(&demoSM, d, a, pressA);
-    fsm_eventSingUp(&demoSM, d, b, pressB);
+    demoSM.eventSingUp(&demoSM, a, b, pressB);
+    demoSM.eventSingUp(&demoSM, a, c, pressC);
+    demoSM.eventSingUp(&demoSM, b, d, pressD);
+    demoSM.eventSingUp(&demoSM, c, a, pressA);
+    demoSM.eventSingUp(&demoSM, d, a, pressA);
+    demoSM.eventSingUp(&demoSM, d, b, pressB);
 
     printf("the reserved blocks num is: %d\n", dyMM_reservedBlks_min());
 }
@@ -54,5 +52,5 @@ void smDemoBuild()
 */
 void smDemoRun(void)
 {
-    fsm_run(&demoSM);
+    demoSM.run(&demoSM);
 }

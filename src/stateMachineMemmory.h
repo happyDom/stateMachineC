@@ -16,8 +16,5 @@ typedef struct
 DMEM *DynMemGet(uint32_t size);
 void DynMemFree(DMEM *pDmem);
 
-#ifdef dyMM__DEBUG
-uint16_t getReservedBlock_num_min(void);
-#endif
- 
+uint16_t getReservedBlock_num_min(void); 
 #endif //__MEMORY_H__

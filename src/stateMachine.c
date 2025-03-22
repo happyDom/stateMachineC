@@ -1,8 +1,12 @@
-#include "stateMachine.h"
 #include "stateMachineMemmory.h"
-#include <stdio.h>
+#include "stateMachine.h"
 
 DMEM *dyMM;
+
+static void __reset(stateMachine_t *pSm);
+static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, stateMachine_eventResult_t (*pEvent)(stateMachineUnit_t *));
+static void __actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(stateMachineUnit_t *), void (*pDo)(stateMachineUnit_t *), void (*pExist)(stateMachineUnit_t *));
+static void __run(stateMachine_t *pSm);
 
 /*
 初始化状态机
@@ -19,12 +23,6 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	}else{
 		while(1); //如果内存分配不成功，则死在这里
 	}
-	
-	#ifdef dyMM__DEBUG
-	printf("sizeof uint32_t is %d\n", sizeof(uint32_t));
-	printf("sizeof stateMachineUnit_t is %d\n", sizeof(stateMachineUnit_t));
-	printf("sizeof stateMachine_event_t is %d\n", sizeof(stateMachine_event_t));
-	#endif
 	
 	pSm->buffer = NULL;
 	pSm->latched = false;
@@ -55,12 +53,17 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 		//同步设置该状态的出现次数为0
 		pSm->enterCounterOf[i] = 0;
 	}
+
+	pSm->reset = __reset;
+	pSm->eventSingUp = __eventSingUp;
+	pSm->actionSignUp = __actionSignUp;
+	pSm->run = __run;
 }
 
 /*
 将指定的状态机，复位到默认的状态
 */
-void fsm_reset(stateMachine_t *pSm)
+static void __reset(stateMachine_t *pSm)
 {
 	if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
 		stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
@@ -89,7 +92,7 @@ void fsm_reset(stateMachine_t *pSm)
 向指定的状态机注册事件,将指定的事件注册到对应的状态下,但需要注意:
 事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
-void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, stateMachine_eventResult_t (*pEvent)(stateMachineUnit_t *))
+static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, stateMachine_eventResult_t (*pEvent)(stateMachineUnit_t *))
 {
 	//如果 __pStateMachine 没有初始化, 无法注册事件,直接返回
 	if (IS_NULL(pSm)||IS_NULL(pSm->pSMChain)){return;}
@@ -127,7 +130,7 @@ void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, st
 /*
 向指定的状态机注册动作,将指定的事件注册到对应的状态下
 */
-void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(stateMachineUnit_t *), void (*pDo)(stateMachineUnit_t *), void (*pExist)(stateMachineUnit_t *))
+static void __actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(stateMachineUnit_t *), void (*pDo)(stateMachineUnit_t *), void (*pExist)(stateMachineUnit_t *))
 {
 	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
 	if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)){return;}
@@ -143,7 +146,7 @@ void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(state
 /*
 运行指定的状态机
 */
-void fsm_run(stateMachine_t *pSm)
+static void __run(stateMachine_t *pSm)
 {
 	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
 	if (IS_NULL(pSm)){return;}
