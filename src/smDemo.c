@@ -6,7 +6,7 @@ char keys[7] = {'a','b','c','d','e','f','g'};
 char inputKey;
 stateMachine_t demoSM;
 
-void actionEntry(stateMachineUnit_t *pSt)
+void actionEntry(smUnit_t *pSt)
 {
     if(pSt->pSm->roundCounter == 0){
         //状态机首次运行时
@@ -17,22 +17,22 @@ void actionEntry(stateMachineUnit_t *pSt)
     }
 }
 
-void actionDo(stateMachineUnit_t *pSt)
+void actionDo(smUnit_t *pSt)
 {
     //状态机的do事件
     printf("----roundCounter of %c is %d\n", keys[pSt->stateID], pSt->roundCounter);
 }
 
-void actionExit(stateMachineUnit_t *pSt)
+void actionExit(smUnit_t *pSt)
 {
     //状态机的退出事件
     printf("state exchanged: %c", keys[pSt->stateID]);
 }
 
-stateMachine_eventResult_t pressA(stateMachineUnit_t *pSt) {return 'a' == inputKey;};
-stateMachine_eventResult_t pressB(stateMachineUnit_t *pSt) {return 'b' == inputKey;};
-stateMachine_eventResult_t pressC(stateMachineUnit_t *pSt) {return 'c' == inputKey;};
-stateMachine_eventResult_t pressD(stateMachineUnit_t *pSt) {return 'd' == inputKey;};
+smEventResult_t pressA(smUnit_t *pSt) {return 'a' == inputKey;};
+smEventResult_t pressB(smUnit_t *pSt) {return 'b' == inputKey;};
+smEventResult_t pressC(smUnit_t *pSt) {return 'c' == inputKey;};
+smEventResult_t pressD(smUnit_t *pSt) {return 'd' == inputKey;};
 
 void smDemoBuild()
 {

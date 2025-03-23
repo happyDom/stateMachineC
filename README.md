@@ -81,7 +81,7 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
   - 实现状态机的进入事件，逗留事件和退出事件；你可以为每个状态分别实现不同的进入事件，逗留事件和退出事件，也可以共用它们
 
     ```C
-    void actionEntry(stateMachineUnit_t *pSt)
+    void actionEntry(smUnit_t *pSt)
     {
         if(pSt->pSm->roundCounter == 0){
             //状态机首次运行时
@@ -92,13 +92,13 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
         }
     }
 
-    void actionDo(stateMachineUnit_t *pSt)
+    void actionDo(smUnit_t *pSt)
     {
         //状态机的do事件
         printf("----roundCounter of %c is %d\n", keys[pSt->stateID], pSt->roundCounter);
     }
 
-    void actionExit(stateMachineUnit_t *pSt)
+    void actionExit(smUnit_t *pSt)
     {
         //状态机的退出事件
         printf("state exchanged: %c", keys[pSt->stateID]);
@@ -108,10 +108,10 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
   - 实现状态机跳转事件，用于在每一次轮询状态机时观察是否发生了对应的事件，如果发生了（返回go），则状态跳转到对应的目标状态
   
     ```C
-    stateMachine_eventResult_t pressA(stateMachineUnit_t *pSt) {return 'a' == inputKey;};
-    stateMachine_eventResult_t pressB(stateMachineUnit_t *pSt) {return 'b' == inputKey;};
-    stateMachine_eventResult_t pressC(stateMachineUnit_t *pSt) {return 'c' == inputKey;};
-    stateMachine_eventResult_t pressD(stateMachineUnit_t *pSt) {return 'd' == inputKey;};
+    smEventResult_t pressA(smUnit_t *pSt) {return 'a' == inputKey;};
+    smEventResult_t pressB(smUnit_t *pSt) {return 'b' == inputKey;};
+    smEventResult_t pressC(smUnit_t *pSt) {return 'c' == inputKey;};
+    smEventResult_t pressD(smUnit_t *pSt) {return 'd' == inputKey;};
     ```
 
   - 实现 *smDemoBuild* 方法，初始化状态机，为每个状态注册对应的事件处理函数，以及为每个状态跳转路径注册对应的事件函数；以下的demo中实现了如下的一个状态机跳转关系：

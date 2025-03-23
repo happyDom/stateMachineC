@@ -4,8 +4,8 @@
 DMEM *dyMM;
 
 static void __reset(stateMachine_t *pSm);
-static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, stateMachine_eventResult_t (*pEvent)(stateMachineUnit_t *));
-static void __actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(stateMachineUnit_t *), void (*pDo)(stateMachineUnit_t *), void (*pExist)(stateMachineUnit_t *));
+static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEvent)(smUnit_t *));
+static void __actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUnit_t *), void (*pDo)(smUnit_t *), void (*pExist)(smUnit_t *));
 static void __run(stateMachine_t *pSm);
 
 /*
@@ -27,9 +27,9 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->buffer = NULL;
 	pSm->latched = false;
 
-	dyMM = DynMemGet(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
+	dyMM = DynMemGet(sizeof(smUnit_t) * pSm->stateIDs_Count);
 	if(IS_pSafe(dyMM)){
-		pSm->pSMChain = (stateMachineUnit_t *)dyMM->addr;
+		pSm->pSMChain = (smUnit_t *)dyMM->addr;
 	}else{
 		while(1); //如果内存分配不成功，则死在这里
 	}
@@ -66,7 +66,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 static void __reset(stateMachine_t *pSm)
 {
 	if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
-		stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
+		smUnit_t *st = &pSm->pSMChain[pSm->stateID];
 
 		st->latched = false;													//解除当前状态的状态锁
 		if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}	//执行当前状的退出事件
@@ -91,7 +91,7 @@ static void __reset(stateMachine_t *pSm)
 向指定的状态机注册事件,将指定的事件注册到对应的状态下,但需要注意:
 事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
-static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, stateMachine_eventResult_t (*pEvent)(stateMachineUnit_t *))
+static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEvent)(smUnit_t *))
 {
 	//如果 __pStateMachine 没有初始化, 无法注册事件,直接返回
 	if (IS_NULL(pSm)||IS_NULL(pSm->pSMChain)){return;}
@@ -99,23 +99,23 @@ static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextStat
 	//如果要注册的stateID不合理，则退出
 	if (pSm->stateIDs_Count <= stateID){return;}
 	
-	dyMM = DynMemGet(sizeof(stateMachine_event_t));
+	dyMM = DynMemGet(sizeof(struct stateMachine_event_s));
 	if(!IS_pSafe(dyMM)){
 		while(1); //如果内存分配不成功，则死在这里
 	}
 
 	if(IS_NULL(pSm->pSMChain[stateID].events))
 	{
-		pSm->pSMChain[stateID].events = (stateMachine_event_t*)dyMM->addr;
+		pSm->pSMChain[stateID].events = (struct stateMachine_event_s *)dyMM->addr;
 		pSm->pSMChain[stateID].events->pEventForGoing = pEvent;
 		pSm->pSMChain[stateID].events->nextState = nextState;
 		pSm->pSMChain[stateID].events->nextEvent = NULL;
 	} else {
-		stateMachine_event_t *p = (stateMachine_event_t*)dyMM->addr;
+		struct stateMachine_event_s *p = (struct stateMachine_event_s *)dyMM->addr;
 		p->pEventForGoing = pEvent;
 		p->nextState = nextState;
 		p->nextEvent = NULL;
-		for (stateMachine_event_t *stEvent = pSm->pSMChain[stateID].events;;stEvent = stEvent->nextEvent)
+		for (struct stateMachine_event_s *stEvent = pSm->pSMChain[stateID].events;;stEvent = stEvent->nextEvent)
 		{
 			if(IS_NULL(stEvent->nextEvent))
 			{
@@ -129,7 +129,7 @@ static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextStat
 /*
 向指定的状态机注册动作,将指定的事件注册到对应的状态下
 */
-static void __actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(stateMachineUnit_t *), void (*pDo)(stateMachineUnit_t *), void (*pExist)(stateMachineUnit_t *))
+static void __actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUnit_t *), void (*pDo)(smUnit_t *), void (*pExist)(smUnit_t *))
 {
 	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
 	if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)){return;}
@@ -156,8 +156,8 @@ static void __run(stateMachine_t *pSm)
 	}
 
 	//获取当前的状态单元
-	stateMachineUnit_t *st = &pSm->pSMChain[pSm->stateID];
-	stateMachineUnit_t *stNew = NULL;
+	smUnit_t *st = &pSm->pSMChain[pSm->stateID];
+	smUnit_t *stNew = NULL;
 
 	//更新当前状态的计数值
 	st->roundCounter++;
@@ -175,7 +175,7 @@ static void __run(stateMachine_t *pSm)
 		//如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
 		if(IS_pSafe(st->events) && !st->latched){
 			//轮询当前状态的的事件
-			for(stateMachine_event_t *p = st->events;IS_pSafe(p); p=p->nextEvent)
+			for(struct stateMachine_event_s *p = st->events;IS_pSafe(p); p=p->nextEvent)
 			{
 				// 如果这个事件存在目标状态(stateID_end 不被识为有效的目标状态)
 				if(pSm->stateIDs_Count > p->nextState)
