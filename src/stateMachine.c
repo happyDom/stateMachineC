@@ -34,6 +34,9 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 		//同步设置该状态的出现次数为0
 		pSm->enterCounterOf[i] = 0;
 	}
+
+	pSm->actionOnChangeBeforeEnter = NULL;
+	pSm->actionAfterDo = NULL;
 }
 
 /*
