@@ -58,6 +58,9 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->eventSingUp = __eventSingUp;
 	pSm->actionSignUp = __actionSignUp;
 	pSm->run = __run;
+
+	pSm->actionOnChangeBeforeEnter = NULL;
+	pSm->actionAfterDo = NULL;
 }
 
 /*
