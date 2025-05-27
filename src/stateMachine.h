@@ -24,13 +24,15 @@ typedef enum{
 }smEventResult_t;
 
 typedef union {
+	bool b;
+	char c;
+    unsigned char uc;
     int i;
     unsigned int ui;
     long l;
     unsigned long ul;
     float f;
     double d;
-    unsigned char b;
 } bufferUnion;
 
 struct stateMachine_event_s;
