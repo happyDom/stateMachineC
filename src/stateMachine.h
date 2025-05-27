@@ -59,7 +59,8 @@ struct stateMachineUnit_s
 	struct stateMachine_actionMap_s actions;		//在本状态时需要执行的动作
 	struct stateMachine_event_s *events;			//在本状态时，需要进行关注的事件，这是一个数组地址
 	uint32_t roundCounter;					//这个计数器显示了在本状态期间，状态机轮询的次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
-	void *buffer;							//一个buffer，用于存放与实际实用场景相关的状态数据
+	bufferUnion baseBuffer;			//一个通用的buffer，用于存放与实际实用场景相关的数据
+	void *objBuffer;				//一个指针，用于存放与实际实用场景相关的数据
 	stateMachine_t *pSm;					//状态机的指针，这使得状态单元可以使用状态机中的信息
 };
 
