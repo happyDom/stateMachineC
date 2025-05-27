@@ -23,6 +23,16 @@ typedef enum{
 	go=1,
 }smEventResult_t;
 
+typedef union {
+    int i;
+    unsigned int ui;
+    long l;
+    unsigned long ul;
+    float f;
+    double d;
+    unsigned char b;
+} bufferUnion;
+
 struct stateMachine_event_s;
 typedef struct stateMachineUnit_s smUnit_t;
 typedef struct stateMachine_s stateMachine_t;
@@ -64,7 +74,9 @@ struct stateMachine_s
 	uint8_t stateID_default;		//状态机的默认状态
 	uint8_t stateIDs_Count;			//状态机的总状态数
 	uint32_t roundCounter;			//记录状态机的轮询次数
-	void *buffer;					//一个buffer，用于存放与实际实用场景相关的状态数据
+	bufferUnion baseBuffer;			//一个通用的buffer，用于存放与实际实用场景相关的数据
+	void *objBuffer;				//一个指针，用于存放与实际实用场景相关的数据
+
 
 	//复位状态机：将状态机的运行状态复位到默认状态
 	void (*reset)(stateMachine_t *pSm);
