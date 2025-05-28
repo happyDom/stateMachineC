@@ -10,7 +10,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->stateID = pSm->stateID_default;
 	pSm->roundCounter = 0;
 	pSm->enterCounterOf = (uint32_t *)malloc(sizeof(uint32_t) * pSm->stateIDs_Count);
-	pSm->buffer = NULL;
+	pSm->buffer.ptr = NULL;
 	pSm->latched = false;
 
 	pSm->pSMChain = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
@@ -25,7 +25,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 		pSm->pSMChain[i].actions.pEnterAction = NULL;
 		pSm->pSMChain[i].actions.pExistAction = NULL;
 		pSm->pSMChain[i].events = NULL;
-		pSm->pSMChain[i].buffer = NULL;
+		pSm->pSMChain[i].buffer.ptr = NULL;
 		pSm->pSMChain[i].pSm = pSm;							//登记状态机的指针
 
 		//初始化内部变量
