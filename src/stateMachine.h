@@ -36,6 +36,7 @@ typedef union {
     unsigned long long ul64;
     float f32;
     double d64;
+	void *ptr;
 } bufferUnion;
 
 struct stateMachine_event_s;
@@ -64,8 +65,7 @@ struct stateMachineUnit_s
 	struct stateMachine_actionMap_s actions;		//在本状态时需要执行的动作
 	struct stateMachine_event_s *events;			//在本状态时，需要进行关注的事件，这是一个数组地址
 	uint32_t roundCounter;					//这个计数器显示了在本状态期间，状态机轮询的次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
-	bufferUnion baseBuffer;			//一个通用的buffer，用于存放与实际实用场景相关的数据
-	void *objBuffer;				//一个指针，用于存放与实际实用场景相关的数据
+	bufferUnion buffer;						//一个通用的buffer，用于存放与实际实用场景相关的数据
 	stateMachine_t *pSm;					//状态机的指针，这使得状态单元可以使用状态机中的信息
 };
 
@@ -80,9 +80,7 @@ struct stateMachine_s
 	uint8_t stateID_default;		//状态机的默认状态
 	uint8_t stateIDs_Count;			//状态机的总状态数
 	uint32_t roundCounter;			//记录状态机的轮询次数
-	bufferUnion baseBuffer;			//一个通用的buffer，用于存放与实际实用场景相关的数据
-	void *objBuffer;				//一个指针，用于存放与实际实用场景相关的数据
-
+	bufferUnion buffer;				//一个通用的buffer，用于存放与实际实用场景相关的数据
 
 	//复位状态机：将状态机的运行状态复位到默认状态
 	void (*reset)(stateMachine_t *pSm);

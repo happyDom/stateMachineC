@@ -24,7 +24,6 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 		while(1); //如果内存分配不成功，则死在这里
 	}
 	
-	pSm->objBuffer = NULL;
 	pSm->latched = false;
 
 	dyMM = DynMemGet(sizeof(smUnit_t) * pSm->stateIDs_Count);
@@ -44,7 +43,6 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 		pSm->pSMChain[i].actions.pEnterAction = NULL;
 		pSm->pSMChain[i].actions.pExistAction = NULL;
 		pSm->pSMChain[i].events = NULL;
-		pSm->pSMChain[i].objBuffer = NULL;
 		pSm->pSMChain[i].pSm = pSm;							//登记状态机的指针
 
 		//初始化内部变量
