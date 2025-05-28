@@ -14,21 +14,21 @@ typedef enum{
 	go=1,
 } stateMachine_eventResult_t;
 
-typedef union {
+typedef struct  {
 	bool b;
 	unsigned char bt[8];
 	signed char i8;
-    unsigned char ui8;
+    unsigned char u8;
 	short s16;
-	unsigned short us16;
+	unsigned short u16;
     int i32;
-    unsigned int ui32;
+    unsigned int u32;
     long long l64;
-    unsigned long long ul64;
+    unsigned long long u64;
     float f32;
     double d64;
 	void *ptr;
-} bufferUnion;
+} bufferUnion_t;
 
 typedef struct stateMachineUnit_s stateMachineUnit_t;
 typedef struct stateMachine_event_s stateMachine_event_t;
@@ -56,7 +56,7 @@ struct stateMachineUnit_s
 	stateMachine_actionMap_t actions;		//在本状态时需要执行的动作
 	stateMachine_event_t *events;			//在本状态时，需要进行关注的事件，这是一个数组地址
 	uint32_t roundCounter;					//这个计数器显示了在本状态期间，状态机轮询的次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
-	bufferUnion buffer;			//一个通用的buffer，用于存放与实际实用场景相关的数据
+	bufferUnion_t buffer;			//一个通用的buffer，用于存放与实际实用场景相关的数据
 	stateMachine_t *pSm;					//状态机的指针，这使得状态单元可以使用状态机中的信息
 };
 
@@ -71,7 +71,7 @@ struct stateMachine_s
 	uint8_t stateID_default;		//状态机的默认状态
 	uint8_t stateIDs_Count;			//状态机的总状态数
 	uint32_t roundCounter;			//记录状态机的轮询次数
-	bufferUnion buffer;			//一个通用的buffer，用于存放与实际实用场景相关的数据
+	bufferUnion_t buffer;			//一个通用的buffer，用于存放与实际实用场景相关的数据
 };
 
 //初始化状态表
