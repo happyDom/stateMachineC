@@ -25,14 +25,17 @@ typedef enum{
 
 typedef union {
 	bool b;
-	char c;
-    unsigned char uc;
-    int i;
-    unsigned int ui;
-    long l;
-    unsigned long ul;
-    float f;
-    double d;
+	unsigned char bt[8];
+	signed char i8;
+    unsigned char ui8;
+	short s16;
+	unsigned short us16;
+    int i32;
+    unsigned int ui32;
+    long long l64;
+    unsigned long long ul64;
+    float f32;
+    double d64;
 } bufferUnion;
 
 struct stateMachine_event_s;
