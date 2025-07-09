@@ -1,4 +1,5 @@
 #include "stateMachine.h"
+#include "leddisplaytask.h"
 
 /*
 初始化状态机
@@ -10,10 +11,18 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->stateID = pSm->stateID_default;
 	pSm->roundCounter = 0;
 	pSm->enterCounterOf = (uint32_t *)malloc(sizeof(uint32_t) * pSm->stateIDs_Count);
+    if(NULL==pSm->enterCounterOf){
+      OpenABSLed();
+      while(1);
+    }	
 	pSm->buffer.ptr = NULL;
 	pSm->latched = false;
 
 	pSm->pSMChain = (stateMachineUnit_t *)malloc(sizeof(stateMachineUnit_t) * pSm->stateIDs_Count);
+	if(NULL==pSm->pSMChain){
+      OpenABSLed();
+      while(1);
+    }
 
 	//遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
 	for(int i=0; i < pSm->stateIDs_Count; i++)
@@ -82,6 +91,10 @@ void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, st
 	if(IS_NULL(pSm->pSMChain[stateID].events))
 	{
 		pSm->pSMChain[stateID].events = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
+		if(NULL==pSm->pSMChain[stateID].events){
+			OpenABSLed();
+			while(1);
+		}		
 		pSm->pSMChain[stateID].events->pEventForGoing = pEvent;
 		pSm->pSMChain[stateID].events->nextState = nextState;
 		pSm->pSMChain[stateID].events->nextEvent = NULL;
@@ -89,6 +102,10 @@ void fsm_eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, st
 	else
 	{
 		stateMachine_event_t *p = (stateMachine_event_t*)malloc(sizeof(stateMachine_event_t));
+		if(NULL==p){
+			OpenABSLed();
+			while(1);
+		}		
 		p->pEventForGoing = pEvent;
 		p->nextState = nextState;
 		p->nextEvent = NULL;
