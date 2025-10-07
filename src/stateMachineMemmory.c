@@ -3,15 +3,14 @@
 
 /*
  * 用户需要创建一个 userSMCfg.h 文件， 管理动态内存池的容量，应包含如下内容：
-#define DMEM_BLOCK_NUM          1024     //内存块个数，此处建议设置一个比较大的数字，待项目定形后，再调整到合适的大小
+#define DMEM_BLOCK_NUM          1024        //内存块个数，此处建议设置一个比较大的数字，待项目定形后，再调整到合适的大小
+#define DMEM_BLOCK_SIZE         4      	    //内存块大小(x字节)，这取决于实际申请内存时的最小公约数值
 */
 #include "userSMCfg.h"
 
 /**
  * 这里会预先在stack上申请一块指定大小的内存空间，用于后续应用层的动态申请，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
  */
-
-#define DMEM_BLOCK_SIZE         4      	//内存块大小(x字节)，这取决于实际申请内存时的最小公约数值
 #define DMEM_TOTAL_SIZE         (DMEM_BLOCK_SIZE * DMEM_BLOCK_NUM)    //内存总大小
 
 typedef enum
@@ -36,9 +35,9 @@ typedef struct
     uint16_t        blk_num;                        //内存块占用数目
 }DMEM_STATE;
 
-static uint8_t DMEMORY[DMEM_TOTAL_SIZE];
-static DMEM_STATE DMEMS;
-static uint16_t blockUsed = 0;          //已经被实用过的内存块数量
+static idata uint8_t DMEMORY[DMEM_TOTAL_SIZE];
+static xdata  DMEM_STATE DMEMS;
+static idata uint16_t blockUsed = 0;          //已经被实用过的内存块数量
 
 DMEM *DynMemGet(uint16_t size)
 {

@@ -13,6 +13,8 @@ static void __run(stateMachine_t *pSm);
 */
 void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default)
 {
+	int i;
+
 	pSm->stateID_default = stateID_default;
 	pSm->stateIDs_Count = stateIDs_count;
 	pSm->stateID = pSm->stateID_default;
@@ -38,7 +40,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	}
 
 	//遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
-	for(int i=0; i < pSm->stateIDs_Count; i++)
+	for(i=0; i < pSm->stateIDs_Count; i++)
 	{
 		pSm->pSMChain[i].stateID = i;
 		pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;	 //默认的前一状态为 stateID_end
@@ -74,6 +76,8 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 */
 static void __reset(stateMachine_t *pSm)
 {
+	int i;
+
 	if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
 		smUnit_t *st = &pSm->pSMChain[pSm->stateID];
 
@@ -87,7 +91,7 @@ static void __reset(stateMachine_t *pSm)
 		pSm->stateID = pSm->stateID_default;
 
 		//复位各状态出现的次数值
-		for(int i=0; i < pSm->stateIDs_Count; i++)
+		for(i=0; i < pSm->stateIDs_Count; i++)
 		{
 			pSm->enterCounterOf[i] = 0;
 			pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;
@@ -102,6 +106,9 @@ static void __reset(stateMachine_t *pSm)
 */
 static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEvent)(smUnit_t *))
 {
+    struct stateMachine_event_s *stEvent = NULL;
+	struct stateMachine_event_s *p = NULL;
+    
 	//如果 __pStateMachine 没有初始化, 无法注册事件,直接返回
 	if (IS_NULL(pSm)||IS_NULL(pSm->pSMChain)){return;}
 	
@@ -120,11 +127,11 @@ static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextStat
 		pSm->pSMChain[stateID].events->nextState = nextState;
 		pSm->pSMChain[stateID].events->nextEvent = NULL;
 	} else {
-		struct stateMachine_event_s *p = (struct stateMachine_event_s *)dyMM->addr;
+		p = (struct stateMachine_event_s *)dyMM->addr;
 		p->pEventForGoing = pEvent;
 		p->nextState = nextState;
 		p->nextEvent = NULL;
-		for (struct stateMachine_event_s *stEvent = pSm->pSMChain[stateID].events;;stEvent = stEvent->nextEvent)
+		for (stEvent = pSm->pSMChain[stateID].events;;stEvent = stEvent->nextEvent)
 		{
 			if(IS_NULL(stEvent->nextEvent))
 			{
@@ -156,6 +163,10 @@ static void __actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(
 */
 static void __run(stateMachine_t *pSm)
 {
+	struct stateMachine_event_s *p = NULL;
+	smUnit_t *st = NULL;
+	smUnit_t *stNew = NULL;
+
 	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
 	if (IS_NULL(pSm)){return;}
 
@@ -165,8 +176,8 @@ static void __run(stateMachine_t *pSm)
 	}
 
 	//获取当前的状态单元
-	smUnit_t *st = &pSm->pSMChain[pSm->stateID];
-	smUnit_t *stNew = NULL;
+	st = &pSm->pSMChain[pSm->stateID];
+	stNew = NULL;
 
 	//更新当前状态的计数值
 	st->roundCounter++;
@@ -184,7 +195,7 @@ static void __run(stateMachine_t *pSm)
 		//如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
 		if(IS_pSafe(st->events) && !st->latched){
 			//轮询当前状态的的事件
-			for(struct stateMachine_event_s *p = st->events;IS_pSafe(p); p=p->nextEvent)
+			for(p = st->events;IS_pSafe(p); p=p->nextEvent)
 			{
 				// 如果这个事件存在目标状态(stateID_end 不被识为有效的目标状态)
 				if(pSm->stateIDs_Count > p->nextState)
