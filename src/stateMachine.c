@@ -25,7 +25,10 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	}
 	
 	pSm->latched = false;
+	#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY)
+	pSm->buffer = {0};				//初始化状态机的buffer
 	pSm->buffer.ptr = NULL;		//初始化状态机的buffer.ptr指针为NULL
+	#endif
 
 	dyMM = DynMemGet(sizeof(smUnit_t) * pSm->stateIDs_Count);
 	if(IS_pSafe(dyMM)){
@@ -45,7 +48,10 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 		pSm->pSMChain[i].actions.pExistAction = NULL;
 		pSm->pSMChain[i].events = NULL;
 		pSm->pSMChain[i].pSm = pSm;							//登记状态机的指针
-		pSm->pSMChain[i].buffer.ptr = NULL;					//初始化状态机的buffer.ptr指针为NULL
+		#if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
+		pSm->pSMChain[i].buffer = {0};				//初始化各状态的buffer
+		pSm->pSMChain[i].buffer.ptr = NULL;			//初始化各状态的buffer.ptr指针为NULL
+		#endif
 
 		//初始化内部变量
 		pSm->pSMChain[i].roundCounter = 0;
