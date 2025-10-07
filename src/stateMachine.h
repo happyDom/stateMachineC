@@ -34,6 +34,8 @@ typedef enum{
 #define IS_NULL(p) (NULL == (p))
 #define IS_pSafe(p) (NULL != (p))
 
+
+
 typedef enum{
 	aWait=0,
 	go=1,
@@ -158,16 +160,19 @@ struct stateMachine_s
 	tinyBuffer_t buffer;
 	#endif
 
-	//复位状态机：将状态机的运行状态复位到默认状态
+	// 复位状态机：将状态机的运行状态复位到默认状态
 	void (*reset)(stateMachine_t *pSm);
-	//向指定的状态注册事件
+	// 向指定的状态注册事件
 	void (*eventSingUp)(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEventForGoing)(smUnit_t *));
 	void (*actionSignUp)(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUnit_t *), void (*pDo)(smUnit_t *), void (*pExist)(smUnit_t *));
+
+	// 报警处理函数，如果状态机遇到异常，可以通过该函数进行报警
+	void (*warningOn)(void);
 
 	//运行一次指定的状态机
 	void (*run)(stateMachine_t *pSm);
 };
 
 //初始化状态表
-void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default);
+void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void));
 #endif

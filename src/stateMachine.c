@@ -11,7 +11,7 @@ static void __run(stateMachine_t *pSm);
 /*
 初始化状态机
 */
-void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default)
+void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void))
 {
 	int i;
 
@@ -19,11 +19,23 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->stateIDs_Count = stateIDs_count;
 	pSm->stateID = pSm->stateID_default;
 	pSm->roundCounter = 0;
+
+	pSm->reset = __reset;
+	pSm->eventSingUp = __eventSingUp;
+	pSm->actionSignUp = __actionSignUp;
+	pSm->run = __run;
+
+	pSm->actionOnChangeBeforeEnter = NULL;
+	pSm->actionAfterDo = NULL;
+	pSm->warningOn = warningFunc;
+
 	dyMM = DynMemGet((sizeof(uint32_t) * pSm->stateIDs_Count));
 	if (IS_pSafe(dyMM)){
 		pSm->enterCounterOf = (uint32_t *)dyMM->addr;
 	}else{
-		while(1); //如果内存分配不成功，则死在这里
+		while(1){ //如果内存分配不成功，则死在这里
+			if (IS_pSafe(pSm->warningOn)){pSm->warningOn();}
+		}
 	}
 	
 	pSm->latched = false;
@@ -36,7 +48,9 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	if(IS_pSafe(dyMM)){
 		pSm->pSMChain = (smUnit_t *)dyMM->addr;
 	}else{
-		while(1); //如果内存分配不成功，则死在这里
+		while(1){ //如果内存分配不成功，则死在这里
+			if (IS_pSafe(pSm->warningOn)){pSm->warningOn();}
+		}
 	}
 
 	//遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
@@ -61,14 +75,6 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 		//同步设置该状态的出现次数为0
 		pSm->enterCounterOf[i] = 0;
 	}
-
-	pSm->reset = __reset;
-	pSm->eventSingUp = __eventSingUp;
-	pSm->actionSignUp = __actionSignUp;
-	pSm->run = __run;
-
-	pSm->actionOnChangeBeforeEnter = NULL;
-	pSm->actionAfterDo = NULL;
 }
 
 /*
@@ -117,7 +123,9 @@ static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextStat
 	
 	dyMM = DynMemGet(sizeof(struct stateMachine_event_s));
 	if(!IS_pSafe(dyMM)){
-		while(1); //如果内存分配不成功，则死在这里
+		while(1){ //如果内存分配不成功，则死在这里
+			if (IS_pSafe(pSm->warningOn)){pSm->warningOn();}
+		}
 	}
 
 	if(IS_NULL(pSm->pSMChain[stateID].events))
