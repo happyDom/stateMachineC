@@ -1,7 +1,30 @@
-#include "stateMachineMemmory.h"
 #include "stateMachine.h"
 
-DMEM *dyMM;
+/*
+ * 用户需要创建一个 userSMCfg.h 文件， 管理动态内存池的容量，应包含如下内容：
+#define DMEM_BUFFER_SIZE          1024        //内存块个数，此处建议设置一个比较大的数字，待项目定形后，再调整到合适的大小
+*/
+#include "userSMCfg.h"
+/**
+ * 这里会预先在stack上申请一块指定大小的内存空间，用于满足后续状态机的内存需求，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
+ */
+static uint8_t idata DMEMORY[DMEM_BUFFER_SIZE];
+static uint16_t bufferUsed = 0;          			//已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
+
+// 管理DMEMORY资源的申请事务
+void *DynMemGet(uint16_t byteSize)
+{
+    // 要申请的内存块大小，不能大于剩余的buffer大小
+    if(byteSize >  DMEM_BUFFER_SIZE - bufferUsed){return NULL;}
+
+    // 更新buffer使用量
+    bufferUsed += byteSize;
+
+    // 返回对应的buffer地址
+    return DMEMORY + bufferUsed - byteSize;
+}
+
+void *dyMM;	// 用于临时存放申请到的内存
 
 /*
 初始化状态机
@@ -19,9 +42,17 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->actionAfterDo = NULL;
 	pSm->warningOn = warningFunc;
 
+	#ifdef __C51__
+	dyMM = DynMemGet((sizeof(uint16_t) * pSm->stateIDs_Count));
+	#else
 	dyMM = DynMemGet((sizeof(uint32_t) * pSm->stateIDs_Count));
+	#endif
 	if (IS_pSafe(dyMM)){
-		pSm->enterCounterOf = (uint32_t *)dyMM->addr;
+		#ifdef __C51__
+		pSm->enterCounterOf = (uint16_t *)dyMM;
+		#else
+		pSm->enterCounterOf = (uint32_t *)dyMM;
+		#endif
 	}else{
 		while(1){ //如果内存分配不成功，则死在这里
 			if (IS_pSafe(pSm->warningOn)){pSm->warningOn();}
@@ -36,7 +67,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 
 	dyMM = DynMemGet(sizeof(smUnit_t) * pSm->stateIDs_Count);
 	if(IS_pSafe(dyMM)){
-		pSm->pSMChain = (smUnit_t *)dyMM->addr;
+		pSm->pSMChain = (smUnit_t *)dyMM;
 	}else{
 		while(1){ //如果内存分配不成功，则死在这里
 			if (IS_pSafe(pSm->warningOn)){pSm->warningOn();}
@@ -120,12 +151,12 @@ void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, sm
 
 	if(IS_NULL(pSm->pSMChain[stateID].events))
 	{
-		pSm->pSMChain[stateID].events = (struct stateMachine_event_s *)dyMM->addr;
+		pSm->pSMChain[stateID].events = (struct stateMachine_event_s *)dyMM;
 		pSm->pSMChain[stateID].events->pEventForGoing = pEvent;
 		pSm->pSMChain[stateID].events->nextState = nextState;
 		pSm->pSMChain[stateID].events->nextEvent = NULL;
 	} else {
-		p = (struct stateMachine_event_s *)dyMM->addr;
+		p = (struct stateMachine_event_s *)dyMM;
 		p->pEventForGoing = pEvent;
 		p->nextState = nextState;
 		p->nextEvent = NULL;
