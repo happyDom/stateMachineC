@@ -94,8 +94,4 @@ struct stateMachine_s
 
 //初始化状态表
 void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default);
-
-//提供一个接口，用于获取内存池中剩余内存块的最小值，为合理优化内存池大小做为参考
-uint16_t dyMM_blocksNumOfUsed(void);
-
 #endif

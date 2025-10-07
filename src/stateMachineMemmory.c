@@ -1,12 +1,17 @@
 #include "stateMachineMemmory.h"
 #include <stdio.h>
 
+/*
+ * 用户需要创建一个 userDMEMCfg.h 文件， 用于管理动态内存池的容量，内容如下：
+#define DMEM_BLOCK_NUM          1024     //内存块个数，此处建议设置一个比较大的数字，待项目定形后，再调整到合适的大小
+*/
+#include "userDMEMCfg.h"
+
 /**
- * 这里会预告在stack上申请一块指定大小的内存空间，用于后续应用层的动态申请，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
+ * 这里会预先在stack上申请一块指定大小的内存空间，用于后续应用层的动态申请，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
  */
 
 #define DMEM_BLOCK_SIZE         4      	//内存块大小(x字节)，这取决于实际申请内存时的最小公约数值
-#define DMEM_BLOCK_NUM          1024     //内存块个数，此处建议设置一个比较大的数字，待项目定形后，再调整到合适的大小
 #define DMEM_TOTAL_SIZE         (DMEM_BLOCK_SIZE * DMEM_BLOCK_NUM)    //内存总大小
 
 typedef enum
@@ -33,11 +38,9 @@ typedef struct
  
 static uint8_t DMEMORY[DMEM_TOTAL_SIZE];
 static DMEM_STATE DMEMS;
-#ifdef dyMM__DEBUG
 static uint16_t blockUsed = 0;          //已经被实用过的内存块数量
-#endif
 
-DMEM *DynMemGet(uint32_t size)
+DMEM *DynMemGet(uint16_t size)
 {
     uint16_t loop = 0;
     uint16_t find = 0;
@@ -99,11 +102,10 @@ DMEM *DynMemGet(uint32_t size)
                 DMEMS.apply_num += 1;
                 DMEMS.blk_num += blk_num_want;
 
-                #ifdef dyMM__DEBUG // 如果申请成功，计算剩余的内存块数量
+                // 如果申请成功，计算剩余的内存块数量
                 if(blockUsed < apply->blk_s + apply->blk_num){
                     blockUsed = apply->blk_s + apply->blk_num;
                 }
-                #endif
                 
                 return user;
             }
@@ -116,29 +118,4 @@ DMEM *DynMemGet(uint32_t size)
 
     //搜索整个内存块，未找到大小适合的空间
     return NULL;
-}
-
-void DynMemFree(DMEM *user)
-{
-    uint16_t loop = 0;
-    //若参数为空，直接返回
-    if(NULL == user)    {   return; }
-    
-    //释放内存空间
-    for(loop = DMEMS.tb_apply[user->tb].blk_s; loop < DMEMS.tb_apply[user->tb].blk_s + DMEMS.tb_apply[user->tb].blk_num; loop++)
-    {
-        DMEMS.tb_blk[loop] = DMEM_FREE;
-        DMEMS.blk_num -= 1;
-    }
-    //释放申请表
-    DMEMS.tb_apply[user->tb].used = DMEM_FREE;
-    DMEMS.apply_num -= 1;
-}
-
-uint16_t getBlocksNumOfUsed(void){
-    #ifdef dyMM__DEBUG
-    return blockUsed;
-    #else
-    return 0;
-    #endif
 }

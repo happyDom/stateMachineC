@@ -225,11 +225,3 @@ static void __run(stateMachine_t *pSm)
 		}
 	}
 }
-
-uint16_t dyMM_blocksNumOfUsed(void){
-	#ifdef dyMM__DEBUG
-	return getBlocksNumOfUsed();
-	#else
-	return 0;
-	#endif
-}
