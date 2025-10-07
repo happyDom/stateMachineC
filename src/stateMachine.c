@@ -8,7 +8,7 @@
 /**
  * 这里会预先在stack上申请一块指定大小的内存空间，用于满足后续状态机的内存需求，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
  */
-static uint8_t idata DMEMORY[DMEM_BUFFER_SIZE];
+static uint8_t DMEMORY[DMEM_BUFFER_SIZE];
 static uint16_t bufferUsed = 0;          			//已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
 
 // 管理DMEMORY资源的申请事务
@@ -42,17 +42,9 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->actionAfterDo = NULL;
 	pSm->warningOn = warningFunc;
 
-	#ifdef __C51__
-	dyMM = DynMemGet((sizeof(uint16_t) * pSm->stateIDs_Count));
-	#else
 	dyMM = DynMemGet((sizeof(uint32_t) * pSm->stateIDs_Count));
-	#endif
 	if (IS_pSafe(dyMM)){
-		#ifdef __C51__
-		pSm->enterCounterOf = (uint16_t *)dyMM;
-		#else
 		pSm->enterCounterOf = (uint32_t *)dyMM;
-		#endif
 	}else{
 		while(1){ //如果内存分配不成功，则死在这里
 			if (IS_pSafe(pSm->warningOn)){pSm->warningOn();}
