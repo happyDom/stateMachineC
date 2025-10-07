@@ -160,19 +160,18 @@ struct stateMachine_s
 	tinyBuffer_t buffer;
 	#endif
 
-	// 复位状态机：将状态机的运行状态复位到默认状态
-	void (*reset)(stateMachine_t *pSm);
-	// 向指定的状态注册事件
-	void (*eventSingUp)(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEventForGoing)(smUnit_t *));
-	void (*actionSignUp)(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUnit_t *), void (*pDo)(smUnit_t *), void (*pExist)(smUnit_t *));
-
 	// 报警处理函数，如果状态机遇到异常，可以通过该函数进行报警
 	void (*warningOn)(void);
-
-	//运行一次指定的状态机
-	void (*run)(stateMachine_t *pSm);
 };
 
 //初始化状态表
 void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void));
+// 注册跳转事件/条件
+void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEventForGoing)(smUnit_t *));
+// 注册行为动作
+void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUnit_t *), void (*pDo)(smUnit_t *), void (*pExist)(smUnit_t *));
+// 复位状态机：将状态机的运行状态复位到默认状态
+void fsm_reset(stateMachine_t *pSm);
+//运行一次指定的状态机
+void fsm_run(stateMachine_t *pSm);
 #endif

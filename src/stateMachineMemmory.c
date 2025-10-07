@@ -35,9 +35,9 @@ typedef struct
     uint16_t        blk_num;                        //内存块占用数目
 }DMEM_STATE;
 
-static idata uint8_t DMEMORY[DMEM_TOTAL_SIZE];
-static xdata  DMEM_STATE DMEMS;
-static idata uint16_t blockUsed = 0;          //已经被实用过的内存块数量
+static uint8_t DMEMORY[DMEM_TOTAL_SIZE];
+static DMEM_STATE DMEMS;
+uint16_t blockUsed = 0;          //已经被实用过的内存块数量
 
 DMEM *DynMemGet(uint16_t size)
 {

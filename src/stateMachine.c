@@ -3,11 +3,6 @@
 
 DMEM *dyMM;
 
-static void __reset(stateMachine_t *pSm);
-static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEvent)(smUnit_t *));
-static void __actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUnit_t *), void (*pDo)(smUnit_t *), void (*pExist)(smUnit_t *));
-static void __run(stateMachine_t *pSm);
-
 /*
 初始化状态机
 */
@@ -19,11 +14,6 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	pSm->stateIDs_Count = stateIDs_count;
 	pSm->stateID = pSm->stateID_default;
 	pSm->roundCounter = 0;
-
-	pSm->reset = __reset;
-	pSm->eventSingUp = __eventSingUp;
-	pSm->actionSignUp = __actionSignUp;
-	pSm->run = __run;
 
 	pSm->actionOnChangeBeforeEnter = NULL;
 	pSm->actionAfterDo = NULL;
@@ -80,7 +70,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 /*
 将指定的状态机，复位到默认的状态
 */
-static void __reset(stateMachine_t *pSm)
+void fsm_reset(stateMachine_t *pSm)
 {
 	int i;
 
@@ -110,7 +100,7 @@ static void __reset(stateMachine_t *pSm)
 向指定的状态机注册事件,将指定的事件注册到对应的状态下,但需要注意:
 事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
-static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEvent)(smUnit_t *))
+void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEvent)(smUnit_t *))
 {
     struct stateMachine_event_s *stEvent = NULL;
 	struct stateMachine_event_s *p = NULL;
@@ -153,7 +143,7 @@ static void __eventSingUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextStat
 /*
 向指定的状态机注册动作,将指定的事件注册到对应的状态下
 */
-static void __actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUnit_t *), void (*pDo)(smUnit_t *), void (*pExist)(smUnit_t *))
+void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUnit_t *), void (*pDo)(smUnit_t *), void (*pExist)(smUnit_t *))
 {
 	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
 	if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)){return;}
@@ -169,7 +159,7 @@ static void __actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(
 /*
 运行指定的状态机
 */
-static void __run(stateMachine_t *pSm)
+void fsm_run(stateMachine_t *pSm)
 {
 	struct stateMachine_event_s *p = NULL;
 	smUnit_t *st = NULL;

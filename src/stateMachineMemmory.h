@@ -4,6 +4,8 @@
 
 #include "stdint.h"
 
+extern uint16_t blockUsed;          //已经被实用过的内存块数量
+
 //用户使用
 typedef struct
 {
