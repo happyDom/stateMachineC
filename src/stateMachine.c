@@ -5,13 +5,8 @@
  * 这里会预先在stack上申请一块指定大小的内存空间，用于满足后续状态机的内存需求，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
  * 注意：如果使用 C51 单片机，可以通过定义宏 __C51__XDATAMODEL__ 来指定状态机存储池位于xdata上，详见 stateMachine.h 中相关说明
  */
-#ifndef __C51__XDATAMODEL__
-static uint8_t DMEMORY[DMEM_BUFFER_SIZE];
-static uint16_t bufferUsed = 0;          			//已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
-#else
 static uint8_t xdata DMEMORY[DMEM_BUFFER_SIZE];
 static uint16_t bufferUsed = 0;          			//已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
-#endif
 
 // 管理DMEMORY资源的申请事务
 void *DynMemGet(uint16_t byteSize)
@@ -31,11 +26,7 @@ void *dyMM;	// 用于临时存放申请到的内存
 /*
 初始化状态机
 */
-#ifndef __C51__XDATAMODEL__
-void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void))
-#else
 void fsm_init(stateMachine_t xdata *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void))
-#endif
 {
 	int i;
 
@@ -47,17 +38,6 @@ void fsm_init(stateMachine_t xdata *pSm, uint8_t stateIDs_count, uint8_t stateID
 	pSm->actionOnChangeBeforeEnter = NULL;
 	pSm->actionAfterDo = NULL;
 	pSm->warningOn = warningFunc;
-
-	#ifndef __C51__XDATAMODEL__
-	dyMM = DynMemGet((sizeof(uint32_t) * pSm->stateIDs_Count));
-	if (IS_pSafe(dyMM)){
-		pSm->enterCounterOf = (uint32_t *)dyMM;
-	}else{
-		while(1){ //如果内存分配不成功，则死在这里
-			if (IS_pSafe(pSm->warningOn)){pSm->warningOn();}
-		}
-	}
-	#endif
 	
 	pSm->latched = false;
 	#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY)
@@ -67,11 +47,7 @@ void fsm_init(stateMachine_t xdata *pSm, uint8_t stateIDs_count, uint8_t stateID
 
 	dyMM = DynMemGet(sizeof(smUnit_t) *pSm->stateIDs_Count);
 	if(IS_pSafe(dyMM)){
-		#ifndef __C51__XDATAMODEL__
-		pSm->pSMChain = (smUnit_t *)dyMM;
-		#else
 		pSm->pSMChain = (smUnit_t xdata *)dyMM;
-		#endif
 	}else{
 		while(1){ //如果内存分配不成功，则死在这里
 			if (IS_pSafe(pSm->warningOn)){pSm->warningOn();}
@@ -96,24 +72,14 @@ void fsm_init(stateMachine_t xdata *pSm, uint8_t stateIDs_count, uint8_t stateID
 
 		//初始化内部变量
 		pSm->pSMChain[i].roundCounter = 0;
-
-		//同步设置该状态的出现次数为0
-		#ifndef __C51__
-		pSm->enterCounterOf[i] = 0;
-		#endif
 	}
 }
 
 /*
 将指定的状态机，复位到默认的状态
 */
-#ifndef __C51__XDATAMODEL__
-void fsm_reset(stateMachine_t *pSm) {
-	smUnit_t *st;
-#else
 void fsm_reset(stateMachine_t xdata *pSm) {
 	smUnit_t xdata *st;
-#endif
 	int i;
 
 	if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
@@ -131,9 +97,6 @@ void fsm_reset(stateMachine_t xdata *pSm) {
 		//复位各状态出现的次数值
 		for(i=0; i < pSm->stateIDs_Count; i++)
 		{
-			#ifndef __C51__XDATAMODEL__
-			pSm->enterCounterOf[i] = 0;
-			#endif
 			pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;
 			pSm->pSMChain[i].latched = false;
 		}
@@ -144,15 +107,9 @@ void fsm_reset(stateMachine_t xdata *pSm) {
 向指定的状态机注册事件,将指定的事件注册到对应的状态下,但需要注意:
 事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
-#ifndef __C51__XDATAMODEL__
-void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEvent) {
-	struct stateMachine_event_s *stEvent = NULL;
-	struct stateMachine_event_s *p = NULL;
-#else
 void fsm_eventSignUp(stateMachine_t xdata *pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEvent) {
 	struct stateMachine_event_s xdata *stEvent = NULL;
 	struct stateMachine_event_s xdata *p = NULL;
-#endif
 	//如果 __pStateMachine 没有初始化, 无法注册事件,直接返回
 	if (IS_NULL(pSm)||IS_NULL(pSm->pSMChain)){return;}
 	
@@ -168,20 +125,12 @@ void fsm_eventSignUp(stateMachine_t xdata *pSm, uint8_t stateID, uint8_t nextSta
 
 	if(IS_NULL(pSm->pSMChain[stateID].events))
 	{
-		#ifndef __C51__XDATAMODEL__
-		pSm->pSMChain[stateID].events = (struct stateMachine_event_s *)dyMM;
-		#else
 		pSm->pSMChain[stateID].events = (struct stateMachine_event_s xdata *)dyMM;
-		#endif
 		pSm->pSMChain[stateID].events->pEventForGoing = pEvent;
 		pSm->pSMChain[stateID].events->nextState = nextState;
 		pSm->pSMChain[stateID].events->nextEvent = NULL;
 	} else {
-		#ifndef __C51__XDATAMODEL__
-		p = (struct stateMachine_event_s *)dyMM;
-		#else
 		p = (struct stateMachine_event_s xdata *)dyMM;
-		#endif
 		p->pEventForGoing = pEvent;
 		p->nextState = nextState;
 		p->nextEvent = NULL;
@@ -199,11 +148,7 @@ void fsm_eventSignUp(stateMachine_t xdata *pSm, uint8_t stateID, uint8_t nextSta
 /*
 向指定的状态机注册动作,将指定的事件注册到对应的状态下
 */
-#ifndef __C51__XDATAMODEL__
-void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExist) {
-#else
 void fsm_actionSignUp(stateMachine_t xdata *pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExist) {
-#endif
 	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
 	if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)){return;}
 
@@ -218,17 +163,11 @@ void fsm_actionSignUp(stateMachine_t xdata *pSm, uint8_t stateID, smActionFunc_t
 /*
 运行指定的状态机
 */
-#ifndef __C51__XDATAMODEL__
-void fsm_run(stateMachine_t *pSm) {
-	struct stateMachine_event_s *p = NULL;
-	smUnit_t *st = NULL;
-	smUnit_t *stNew = NULL;
-#else
 void fsm_run(stateMachine_t xdata *pSm) {
 	struct stateMachine_event_s xdata *p = NULL;
 	smUnit_t xdata *st = NULL;
 	smUnit_t xdata *stNew = NULL;
-#endif
+
 	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
 	if (IS_NULL(pSm)){return;}
 
@@ -288,11 +227,6 @@ void fsm_run(stateMachine_t xdata *pSm) {
 			
 			//执行当前状态的 exist 动作
 			if(IS_pSafe(st->actions.pExistAction)) {st->actions.pExistAction(st);}
-
-			//更新当前状态的出现次数
-			#ifndef __C51__XDATAMODEL__
-			pSm->enterCounterOf[st->stateID]++;
-			#endif
 
 			stNew->roundCounter = 0;	//复位新状态计数器
 			if(IS_pSafe(pSm->actionOnChangeBeforeEnter)) {pSm->actionOnChangeBeforeEnter(stNew);}	//如果注册有状态切换事件，则执行之

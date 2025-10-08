@@ -114,13 +114,8 @@ struct stateMachine_event_s;
 typedef struct stateMachineUnit_s smUnit_t;
 typedef struct stateMachine_s stateMachine_t;
 
-#ifndef __C51__XDATAMODEL__
-typedef void (*smActionFunc_t)(smUnit_t *);
-typedef smEventResult_t (*smEventFunc_t)(smUnit_t *);
-#else
 typedef void (*smActionFunc_t)(smUnit_t xdata *);
 typedef smEventResult_t (*smEventFunc_t)(smUnit_t xdata *);
-#endif
 
 struct stateMachine_actionMap_s
 {
@@ -133,11 +128,7 @@ struct stateMachine_event_s
 {
 	uint8_t nextState;
 	smEventFunc_t pEventForGoing;
-	#ifndef __C51__XDATAMODEL__
-	struct stateMachine_event_s *nextEvent;				//下一个事件
-	#else
-	struct stateMachine_event_s xdata *nextEvent;
-	#endif
+	struct stateMachine_event_s xdata *nextEvent;				//下一个事件
 }; //这是一个单向链表,用于登记多个事件
 
 struct stateMachineUnit_s
@@ -146,23 +137,17 @@ struct stateMachineUnit_s
 	uint8_t stateID_l;							//状态机的前一个状态
 	uint8_t stateID;							//当前状态循环的状态
 	struct stateMachine_actionMap_s actions;	//在本状态时需要执行的动作
-	#ifndef __C51__XDATAMODEL__
-	struct stateMachine_event_s *events;		//在本状态时，需要进行关注的事件，这是一个数组地址
-	stateMachine_t *pSm;						//状态机的指针，这使得状态单元可以使用状态机中的信息
-	uint32_t roundCounter;						//这个计数器显示了在本状态期间，状态机轮询的次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
-	#else
-	struct stateMachine_event_s xdata *events;
+	struct stateMachine_event_s *events;
 	stateMachine_t xdata *pSm;
 	uint16_t roundCounter;						// 如果1ms为周期计数，可记 65s
-	#endif
-	
+
 	//一个通用的buffer，用于存放与实际实用场景相关的数据
 	#if defined(ST_BUFFER_FULL)
-	fullBuffer_t buffer;
+	fullBuffer_t xdata buffer;
 	#elif defined(ST_BUFFER_PART)
-	partBuffer_t buffer;
+	partBuffer_t xdata buffer;
 	#elif defined(ST_BUFFER_TINY)
-	tinyBuffer_t buffer;
+	tinyBuffer_t xdata buffer;
 	#endif
 };
 
@@ -172,48 +157,29 @@ struct stateMachine_s
 	smActionFunc_t actionOnChangeBeforeEnter; 	// 状态切换前要做的动作, 参数是即将要切换的目标状态
 	smActionFunc_t actionAfterDo;				// 在每个状态的do事件完成后，要执行的动作
 
-	#ifndef __C51__XDATAMODEL__
-	smUnit_t *pSMChain;	//存放状态单元的数组空间的地址
-	uint32_t *enterCounterOf;		//一个数组，用于记录状态机中每一个状态出现的次数，在对应状态退出时进行计数
-	uint32_t roundCounter;			//记录状态机的轮询次数
-	#else
 	smUnit_t xdata *pSMChain;
 	uint16_t roundCounter;
-	#endif
 	uint8_t stateID;				//标记当前状态机的状态
 	uint8_t stateID_default;		//状态机的默认状态
 	uint8_t stateIDs_Count;			//状态机的总状态数
 
 	// 定义一个buffer，用于存放与实际实用场景相关的数据
 	#if defined(SM_BUFFER_FULL)
-	fullBuffer_t buffer;
+	fullBuffer_t xdata buffer;
 	#elif defined(SM_BUFFER_PART)
-	partBuffer_t buffer;
+	partBuffer_t xdata buffer;
 	#elif defined(SM_BUFFER_TINY)
-	tinyBuffer_t buffer;
+	tinyBuffer_t xdata buffer;
 	#endif
 
 	// 报警处理函数，如果状态机遇到异常，可以通过该函数进行报警
 	void (*warningOn)(void);
 };
 
-#ifndef __C51__XDATAMODEL__
-//初始化状态表
-void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void));
-// 注册跳转事件/条件
-void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing);
-// 注册行为动作
-void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExist);
-// 复位状态机：将状态机的运行状态复位到默认状态
-void fsm_reset(stateMachine_t *pSm);
-//运行一次指定的状态机
-void fsm_run(stateMachine_t *pSm);
-#else
 // 如果在 C51 单片机上，内存模式使用 LargeMode： data in xData，则以上定义做如下调整（指针参数加xdata说明）
 void fsm_init(stateMachine_t xdata *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void));
 void fsm_eventSignUp(stateMachine_t xdata *pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing);
 void fsm_actionSignUp(stateMachine_t xdata *pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExist);
 void fsm_reset(stateMachine_t xdata *pSm);
 void fsm_run(stateMachine_t xdata *pSm);
-#endif
 #endif
