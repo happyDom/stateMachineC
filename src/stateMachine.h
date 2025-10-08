@@ -3,18 +3,23 @@
 #include <stdint.h>
 
 /*
- * 用户需要创建一个 userSMCfg.h 文件， 管理状态机和其中各状态是否包含数据buffer，以及数据buffer的类型，应包含如下内容：
-//SM_BUFFER_NO		//状态机层面不定义buffer
-//SM_BUFFER_FULL	//状态机层面定义全量buffer
-//SM_BUFFER_PART	//状态机层面定义部分buffer
-//SM_BUFFER_TINY	//状态机层面定义最小buffer
+ * 你需要创建并完成一个 userSMCfg.h 文档，在该文档中根据需要，应完成以下内容的定义
+ * 1、配置状态机层和状态层的数据buffer，如果你需要在不同的状态之间传递数据，这是个不错的选择
+ *
+ * SM_BUFFER_NO		//状态机层面不定义buffer
+ * SM_BUFFER_FULL	//状态机层面定义全量buffer
+ * SM_BUFFER_PART	//状态机层面定义部分buffer
+ * SM_BUFFER_TINY	//状态机层面定义最小buffer
 #define SM_BUFFER_NO
 
-//ST_BUFFER_NO		//状态层面不定义buffer
-//ST_BUFFER_FULL	//状态层面定义全量buffer
-//ST_BUFFER_PART	//状态层面定义部分buffer
-//ST_BUFFER_TINY	//状态层面定义最小buffer
+ * ST_BUFFER_NO		//状态层面不定义buffer
+ * ST_BUFFER_FULL	//状态层面定义全量buffer
+ * ST_BUFFER_PART	//状态层面定义部分buffer
+ * ST_BUFFER_TINY	//状态层面定义最小buffer
 #define ST_BUFFER_NO
+
+ * 2、定义变量 DMEM_BUFFER_SIZE 用于管理状态机使用的内存，在项目定形后，通过观察bufferUsed的值，适当的减小该变量的值
+#define DMEM_BUFFER_SIZE          512
 */
 #include "userSMCfg.h"
 
@@ -33,8 +38,6 @@ typedef enum{
 
 #define IS_NULL(p) (NULL == (p))
 #define IS_pSafe(p) (NULL != (p))
-
-
 
 typedef enum{
 	aWait=0,
@@ -105,16 +108,19 @@ struct stateMachine_event_s;
 typedef struct stateMachineUnit_s smUnit_t;
 typedef struct stateMachine_s stateMachine_t;
 
+typedef void (*smActionFunc_t)(smUnit_t *);
+typedef smEventResult_t (*smEventFunc_t)(smUnit_t *);
+
 struct stateMachine_actionMap_s
 {
-	void (*pEnterAction)(smUnit_t *);
-	void (*pDoAction)(smUnit_t *);
-	void (*pExistAction)(smUnit_t *);
+	smActionFunc_t pEnterAction;
+	smActionFunc_t pDoAction;
+	smActionFunc_t pExistAction;
 };
 
 struct stateMachine_event_s
 {
-	smEventResult_t (*pEventForGoing)(smUnit_t *);
+	smEventFunc_t pEventForGoing;
 	uint8_t nextState;								//目标状态
 	struct stateMachine_event_s *nextEvent;			//下一个事件
 }; //这是一个单向链表,用于登记多个事件
@@ -142,9 +148,9 @@ struct stateMachineUnit_s
 struct stateMachine_s
 {
 	bool latched;					//状态机锁，为真时，状态机不运行任何状态的动作，不检测任何事件
-	smUnit_t *pSMChain;	//存放状态单元的数组空间的地址
-	void (*actionOnChangeBeforeEnter)(smUnit_t *pstNew); //状态切换前要做的动作
-	void (*actionAfterDo)(smUnit_t *); //在每个do事件后执行的动作
+	smUnit_t *pSMChain;				//存放状态单元的数组空间的地址
+	smActionFunc_t actionOnChangeBeforeEnter; //状态切换前要做的动作，参数是即将要切换到的目标状态实例
+	smActionFunc_t actionAfterDo; 	//在每个do事件后执行的动作
 	uint8_t stateID;				//标记当前状态机的状态
 	uint8_t stateID_default;		//状态机的默认状态
 	uint8_t stateIDs_Count;			//状态机的总状态数
@@ -167,9 +173,9 @@ struct stateMachine_s
 //初始化状态表
 void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void));
 // 注册跳转事件/条件
-void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEventForGoing)(smUnit_t *));
+void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing);
 // 注册行为动作
-void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUnit_t *), void (*pDo)(smUnit_t *), void (*pExist)(smUnit_t *));
+void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExist);
 // 复位状态机：将状态机的运行状态复位到默认状态
 void fsm_reset(stateMachine_t *pSm);
 //运行一次指定的状态机
