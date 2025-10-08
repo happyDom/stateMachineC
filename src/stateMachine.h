@@ -15,6 +15,9 @@
 //ST_BUFFER_PART	//状态层面定义部分buffer
 //ST_BUFFER_TINY	//状态层面定义最小buffer
 #define ST_BUFFER_NO
+
+ * 在51类单片机中，如果内存模式使用 LargeModel：data in Xdata，则需要有如下定义
+#define __C51__XDATAMODEL__
 */
 #include "userSMCfg.h"
 
@@ -107,27 +110,44 @@ typedef struct stateMachine_s stateMachine_t;
 
 struct stateMachine_actionMap_s
 {
+	#ifndef __C51__XDATAMODEL__
 	void (*pEnterAction)(smUnit_t *);
 	void (*pDoAction)(smUnit_t *);
 	void (*pExistAction)(smUnit_t *);
+	#else
+	void (*pEnterAction)(smUnit_t xdata *);
+	void (*pDoAction)(smUnit_t xdata *);
+	void (*pExistAction)(smUnit_t xdata *);
+	#endif
 };
 
 struct stateMachine_event_s
 {
+	uint8_t nextState;									//目标状态
+	#ifndef __C51__XDATAMODEL__
 	smEventResult_t (*pEventForGoing)(smUnit_t *);
-	uint8_t nextState;								//目标状态
-	struct stateMachine_event_s *nextEvent;			//下一个事件
+	struct stateMachine_event_s *nextEvent;				//下一个事件
+	#else
+	smEventResult_t (*pEventForGoing)(smUnit_t xdata *);
+	struct stateMachine_event_s xdata *nextEvent;
+	#endif
 }; //这是一个单向链表,用于登记多个事件
 
 struct stateMachineUnit_s
 {
-	bool latched;							//状态锁，为真时，状态机进行该状态的轮询时，不会检测该状态注册的事件
-	uint8_t stateID_l;						//状态机的前一个状态
-	uint8_t stateID;						//当前状态循环的状态
-	struct stateMachine_actionMap_s actions;		//在本状态时需要执行的动作
-	struct stateMachine_event_s *events;			//在本状态时，需要进行关注的事件，这是一个数组地址
-	uint32_t roundCounter;					//这个计数器显示了在本状态期间，状态机轮询的次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
-	stateMachine_t *pSm;					//状态机的指针，这使得状态单元可以使用状态机中的信息
+	bool latched;								//状态锁，为真时，状态机进行该状态的轮询时，不会检测该状态注册的事件
+	uint8_t stateID_l;							//状态机的前一个状态
+	uint8_t stateID;							//当前状态循环的状态
+	struct stateMachine_actionMap_s actions;	//在本状态时需要执行的动作
+	#ifndef __C51__XDATAMODEL__
+	struct stateMachine_event_s *events;		//在本状态时，需要进行关注的事件，这是一个数组地址
+	stateMachine_t *pSm;						//状态机的指针，这使得状态单元可以使用状态机中的信息
+	uint32_t roundCounter;						//这个计数器显示了在本状态期间，状态机轮询的次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
+	#else
+	struct stateMachine_event_s xdata *events;
+	stateMachine_t xdata *pSm;
+	uint16_t roundCounter;						// 如果1ms为周期计数，可记 65s
+	#endif
 	
 	//一个通用的buffer，用于存放与实际实用场景相关的数据
 	#if defined(ST_BUFFER_FULL)
@@ -142,14 +162,24 @@ struct stateMachineUnit_s
 struct stateMachine_s
 {
 	bool latched;					//状态机锁，为真时，状态机不运行任何状态的动作，不检测任何事件
+	#ifndef __C51__XDATAMODEL__
 	smUnit_t *pSMChain;	//存放状态单元的数组空间的地址
 	void (*actionOnChangeBeforeEnter)(smUnit_t *pstNew); //状态切换前要做的动作
 	void (*actionAfterDo)(smUnit_t *); //在每个do事件后执行的动作
+	#else
+	smUnit_t xdata *pSMChain;
+	void (*actionOnChangeBeforeEnter)(smUnit_t xdata *pstNew);
+	void (*actionAfterDo)(smUnit_t xdata *);
+	#endif
 	uint8_t stateID;				//标记当前状态机的状态
 	uint8_t stateID_default;		//状态机的默认状态
 	uint8_t stateIDs_Count;			//状态机的总状态数
+	#ifndef __C51__XDATAMODEL__
 	uint32_t *enterCounterOf;		//一个数组，用于记录状态机中每一个状态出现的次数，在对应状态退出时进行计数
 	uint32_t roundCounter;			//记录状态机的轮询次数
+	#else
+	uint16_t roundCounter;
+	#endif
 
 	// 定义一个buffer，用于存放与实际实用场景相关的数据
 	#if defined(SM_BUFFER_FULL)
@@ -164,6 +194,7 @@ struct stateMachine_s
 	void (*warningOn)(void);
 };
 
+#ifndef __C51__XDATAMODEL__
 //初始化状态表
 void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void));
 // 注册跳转事件/条件
@@ -174,4 +205,12 @@ void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUni
 void fsm_reset(stateMachine_t *pSm);
 //运行一次指定的状态机
 void fsm_run(stateMachine_t *pSm);
+#else
+// 如果在 C51 单片机上，内存模式使用 LargeMode： data in xData，则以上定义做如下调整（指针参数加xdata说明）
+void fsm_init(stateMachine_t xdata *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void));
+void fsm_eventSignUp(stateMachine_t xdata *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEventForGoing)(smUnit_t xdata *));
+void fsm_actionSignUp(stateMachine_t xdata *pSm, uint8_t stateID, void (*pEnter)(smUnit_t xdata *), void (*pDo)(smUnit_t xdata *), void (*pExist)(smUnit_t xdata *));
+void fsm_reset(stateMachine_t xdata *pSm);
+void fsm_run(stateMachine_t xdata *pSm);
+#endif
 #endif
