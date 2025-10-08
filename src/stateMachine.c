@@ -1,15 +1,17 @@
 #include "stateMachine.h"
-
-/*
- * 用户需要创建一个 userSMCfg.h 文件， 管理动态内存池的容量，应包含如下内容：
-#define DMEM_BUFFER_SIZE          1024        //内存块个数，此处建议设置一个比较大的数字，待项目定形后，再调整到合适的大小
-*/
 #include "userSMCfg.h"
+
 /**
  * 这里会预先在stack上申请一块指定大小的内存空间，用于满足后续状态机的内存需求，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
+ * 注意：如果使用 C51 单片机，可以通过定义宏 __C51__XDATAMODEL__ 来指定状态机存储池位于xdata上，详见 stateMachine.h 中相关说明
  */
+#ifndef __C51__XDATAMODEL__
 static uint8_t DMEMORY[DMEM_BUFFER_SIZE];
 static uint16_t bufferUsed = 0;          			//已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
+#else
+static uint8_t xdata DMEMORY[DMEM_BUFFER_SIZE];
+static uint16_t bufferUsed = 0;          			//已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
+#endif
 
 // 管理DMEMORY资源的申请事务
 void *DynMemGet(uint16_t byteSize)
@@ -143,11 +145,11 @@ void fsm_reset(stateMachine_t xdata *pSm) {
 事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
 #ifndef __C51__XDATAMODEL__
-void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEvent)(smUnit_t *)) {
+void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEvent) {
 	struct stateMachine_event_s *stEvent = NULL;
 	struct stateMachine_event_s *p = NULL;
 #else
-void fsm_eventSignUp(stateMachine_t xdata *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEvent)(smUnit_t xdata *)) {
+void fsm_eventSignUp(stateMachine_t xdata *pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEvent) {
 	struct stateMachine_event_s xdata *stEvent = NULL;
 	struct stateMachine_event_s xdata *p = NULL;
 #endif
@@ -198,9 +200,9 @@ void fsm_eventSignUp(stateMachine_t xdata *pSm, uint8_t stateID, uint8_t nextSta
 向指定的状态机注册动作,将指定的事件注册到对应的状态下
 */
 #ifndef __C51__XDATAMODEL__
-void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUnit_t *), void (*pDo)(smUnit_t *), void (*pExist)(smUnit_t *)) {
+void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExist) {
 #else
-void fsm_actionSignUp(stateMachine_t xdata *pSm, uint8_t stateID, void (*pEnter)(smUnit_t xdata *), void (*pDo)(smUnit_t xdata *), void (*pExist)(smUnit_t xdata *)) {
+void fsm_actionSignUp(stateMachine_t xdata *pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExist) {
 #endif
 	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
 	if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)){return;}
