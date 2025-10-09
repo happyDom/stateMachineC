@@ -48,6 +48,10 @@ typedef enum{
 #define IS_NULL(p) (NULL == (p))
 #define IS_pSafe(p) (NULL != (p))
 
+#ifndef UNUSED
+#define UNUSED(x) (x) = (x)
+#endif
+
 typedef enum{
 	aWait=0,
 	go=1,
