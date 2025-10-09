@@ -20,6 +20,9 @@
 
  * 2、定义变量 DMEM_BUFFER_SIZE 用于管理状态机使用的内存，在项目定形后，通过观察bufferUsed的值，适当的减小该变量的值
 #define DMEM_BUFFER_SIZE          512
+
+ * 提示： 声明状态机对象时，可以直接将对象初始化为0，例如：
+stateMachine_t myFSM = {0};
 */
 #include "userSMCfg.h"
 
@@ -61,7 +64,7 @@ typedef struct {
     float f;
     double d;
 	void *ptr;
-} fullBuffer_t;
+} buffer_t;
 #elif defined(SM_BUFFER_PART) || defined(ST_BUFFER_PART)
 typedef struct {
 	union {
@@ -90,7 +93,7 @@ typedef struct {
 	}d64;
 
 	void *ptr;
-} partBuffer_t;
+} buffer_t;
 #elif defined(SM_BUFFER_TINY) || defined(ST_BUFFER_TINY)
 typedef struct {
 	union {
@@ -101,7 +104,7 @@ typedef struct {
 		unsigned short us;
 		unsigned char raw_16[2];
 	}d16;
-} tinyBuffer_t;
+} buffer_t;
 #endif
 
 struct stateMachine_event_s;
@@ -136,12 +139,8 @@ struct stateMachineUnit_s
 	stateMachine_t *pSm;					//状态机的指针，这使得状态单元可以使用状态机中的信息
 	
 	//一个通用的buffer，用于存放与实际实用场景相关的数据
-	#if defined(ST_BUFFER_FULL)
-	fullBuffer_t buffer;
-	#elif defined(ST_BUFFER_PART)
-	partBuffer_t buffer;
-	#elif defined(ST_BUFFER_TINY)
-	tinyBuffer_t buffer;
+	#if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
+	buffer_t buffer;
 	#endif
 };
 
@@ -158,12 +157,8 @@ struct stateMachine_s
 	uint32_t roundCounter;			//记录状态机的轮询次数
 
 	// 定义一个buffer，用于存放与实际实用场景相关的数据
-	#if defined(SM_BUFFER_FULL)
-	fullBuffer_t buffer;
-	#elif defined(SM_BUFFER_PART)
-	partBuffer_t buffer;
-	#elif defined(SM_BUFFER_TINY)
-	tinyBuffer_t buffer;
+	#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY)
+	buffer_t buffer;
 	#endif
 
 	// 报警处理函数，如果状态机遇到异常，可以通过该函数进行报警

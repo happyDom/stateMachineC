@@ -2,12 +2,12 @@
 /**
  * 这里会预先在stack上申请一块指定大小的内存空间，用于满足后续状态机的内存需求，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
  */
-static uint8_t DMEMORY[DMEM_BUFFER_SIZE];
 static uint16_t bufferUsed = 0;          			//已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
+static uint8_t DMEMORY[DMEM_BUFFER_SIZE] = {0};   	//用于存放状态机使用的内存
+void *dyMM;	// 用于临时存放申请到的内存块地址
 
 // 管理DMEMORY资源的申请事务
-void *DynMemGet(uint16_t byteSize)
-{
+void *DynMemGet(uint16_t byteSize) {
     // 要申请的内存块大小，不能大于剩余的buffer大小
     if(byteSize >  DMEM_BUFFER_SIZE - bufferUsed){return NULL;}
 
@@ -18,13 +18,10 @@ void *DynMemGet(uint16_t byteSize)
     return DMEMORY + bufferUsed - byteSize;
 }
 
-void *dyMM;	// 用于临时存放申请到的内存
-
 /*
 初始化状态机
 */
-void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void))
-{
+void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void)) {
 	int i;
 
 	pSm->stateID_default = stateID_default;
@@ -46,8 +43,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	}
 	
 	pSm->latched = false;
-	#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY)
-	pSm->buffer = {0};				//初始化状态机的buffer
+	#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART)
 	pSm->buffer.ptr = NULL;		//初始化状态机的buffer.ptr指针为NULL
 	#endif
 
@@ -71,8 +67,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 		pSm->pSMChain[i].actions.pExistAction = NULL;
 		pSm->pSMChain[i].events = NULL;
 		pSm->pSMChain[i].pSm = pSm;							//登记状态机的指针
-		#if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
-		pSm->pSMChain[i].buffer = {0};				//初始化各状态的buffer
+		#if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART)
 		pSm->pSMChain[i].buffer.ptr = NULL;			//初始化各状态的buffer.ptr指针为NULL
 		#endif
 
@@ -87,8 +82,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 /*
 将指定的状态机，复位到默认的状态
 */
-void fsm_reset(stateMachine_t *pSm)
-{
+void fsm_reset(stateMachine_t *pSm) {
 	int i;
 
 	if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
@@ -117,8 +111,7 @@ void fsm_reset(stateMachine_t *pSm)
 向指定的状态机注册事件,将指定的事件注册到对应的状态下,但需要注意:
 事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
-void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventResult_t (*pEvent)(smUnit_t *))
-{
+void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing) {
     struct stateMachine_event_s *stEvent = NULL;
 	struct stateMachine_event_s *p = NULL;
     
@@ -138,12 +131,12 @@ void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, sm
 	if(IS_NULL(pSm->pSMChain[stateID].events))
 	{
 		pSm->pSMChain[stateID].events = (struct stateMachine_event_s *)dyMM;
-		pSm->pSMChain[stateID].events->pEventForGoing = pEvent;
+		pSm->pSMChain[stateID].events->pEventForGoing = pEventForGoing;
 		pSm->pSMChain[stateID].events->nextState = nextState;
 		pSm->pSMChain[stateID].events->nextEvent = NULL;
 	} else {
 		p = (struct stateMachine_event_s *)dyMM;
-		p->pEventForGoing = pEvent;
+		p->pEventForGoing = pEventForGoing;
 		p->nextState = nextState;
 		p->nextEvent = NULL;
 		for (stEvent = pSm->pSMChain[stateID].events;;stEvent = stEvent->nextEvent)
@@ -160,8 +153,7 @@ void fsm_eventSignUp(stateMachine_t *pSm, uint8_t stateID, uint8_t nextState, sm
 /*
 向指定的状态机注册动作,将指定的事件注册到对应的状态下
 */
-void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUnit_t *), void (*pDo)(smUnit_t *), void (*pExist)(smUnit_t *))
-{
+void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExist) {
 	//如果状态机或者状态链没有初始化, 无法注册动作,直接返回
 	if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)){return;}
 
@@ -176,8 +168,7 @@ void fsm_actionSignUp(stateMachine_t *pSm, uint8_t stateID, void (*pEnter)(smUni
 /*
 运行指定的状态机
 */
-void fsm_run(stateMachine_t *pSm)
-{
+void fsm_run(stateMachine_t *pSm) {
 	struct stateMachine_event_s *p = NULL;
 	smUnit_t *st = NULL;
 	smUnit_t *stNew = NULL;
