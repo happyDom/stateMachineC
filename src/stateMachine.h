@@ -54,7 +54,7 @@ typedef enum{
 }smEventResult_t;
 
 #if defined(SM_BUFFER_FULL) || defined(ST_BUFFER_FULL)
-struct buffer_s {
+typedef struct {
 	bool b;
 	unsigned char ucAry[8];
 	signed char sc;
@@ -66,9 +66,9 @@ struct buffer_s {
 	long l;
 	unsigned long ul;
     float f;
-};
+} buffer_t;
 #elif defined(SM_BUFFER_PART) || defined(ST_BUFFER_PART)
-struct buffer_s {
+typedef struct {
 	union {
 		bool b;
 		signed char sc;
@@ -86,9 +86,9 @@ struct buffer_s {
 		float f;
 		unsigned char raw_32[4];
 	}d32;
-};
+} buffer_t;
 #elif defined(SM_BUFFER_TINY) || defined(ST_BUFFER_TINY)
-struct buffer_s {
+typedef struct {
 	union {
 		bool b;
 		signed char sc;
@@ -97,12 +97,9 @@ struct buffer_s {
 		unsigned short us;
 		unsigned char raw_16[2];
 	}d16;
-};
+} buffer_t;
 #endif
 
-#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY) || defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
-typedef struct buffer_s buffer_t;
-#endif
 
 struct stateMachine_event_s;
 typedef struct stateMachineUnit_s smUnit_t;

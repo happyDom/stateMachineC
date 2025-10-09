@@ -7,6 +7,7 @@
  */
 static uint16_t xdata bufferUsed = 0;          			//已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
 static uint8_t xdata DMEMORY[DMEM_BUFFER_SIZE] = {0};	//状态机使用的内存池
+void xdata *dyMM;	// 用于临时存放申请到的内存
 
 // 管理DMEMORY资源的申请事务
 void *DynMemGet(uint16_t byteSize)
@@ -20,8 +21,6 @@ void *DynMemGet(uint16_t byteSize)
     // 返回对应的buffer地址
     return DMEMORY + bufferUsed - byteSize;
 }
-
-void *dyMM;	// 用于临时存放申请到的内存
 
 /*
 初始化状态机
