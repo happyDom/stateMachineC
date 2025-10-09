@@ -3,10 +3,10 @@
 
 /**
  * 这里会预先在stack上申请一块指定大小的内存空间，用于满足后续状态机的内存需求，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
- * 注意：如果使用 C51 单片机，可以通过定义宏 __C51__XDATAMODEL__ 来指定状态机存储池位于xdata上，详见 stateMachine.h 中相关说明
+ * 注意：在下面的两行代码中，请不要调整这两行的顺序，这是为了避免DMEMORY的地址从X: 0x0000开始(因为如果是从0x0000开始，则在后文中对指针的非空判断会失效)
  */
-static uint8_t xdata DMEMORY[DMEM_BUFFER_SIZE];
-static uint16_t bufferUsed = 0;          			//已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
+static uint16_t xdata bufferUsed = 0;          			//已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
+static uint8_t xdata DMEMORY[DMEM_BUFFER_SIZE] = {0};	//状态机使用的内存池
 
 // 管理DMEMORY资源的申请事务
 void *DynMemGet(uint16_t byteSize)
@@ -40,11 +40,7 @@ void fsm_init(stateMachine_t xdata *pSm, uint8_t stateIDs_count, uint8_t stateID
 	pSm->warningOn = warningFunc;
 	
 	pSm->latched = false;
-	#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY)
-	pSm->buffer = {0};				//初始化状态机的buffer
-	pSm->buffer.ptr = NULL;		//初始化状态机的buffer.ptr指针为NULL
-	#endif
-
+	
 	dyMM = DynMemGet(sizeof(smUnit_t) *pSm->stateIDs_Count);
 	if(IS_pSafe(dyMM)){
 		pSm->pSMChain = (smUnit_t xdata *)dyMM;
@@ -65,11 +61,7 @@ void fsm_init(stateMachine_t xdata *pSm, uint8_t stateIDs_count, uint8_t stateID
 		pSm->pSMChain[i].actions.pExistAction = NULL;
 		pSm->pSMChain[i].events = NULL;
 		pSm->pSMChain[i].pSm = pSm;							//登记状态机的指针
-		#if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
-		pSm->pSMChain[i].buffer = {0};				//初始化各状态的buffer
-		pSm->pSMChain[i].buffer.ptr = NULL;			//初始化各状态的buffer.ptr指针为NULL
-		#endif
-
+		
 		//初始化内部变量
 		pSm->pSMChain[i].roundCounter = 0;
 	}

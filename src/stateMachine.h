@@ -7,7 +7,7 @@
  * 用户需要定义下面的宏变量，来管理状态机使用的内存池，其值为内存池的byte数量， 此处建议设置一个比较大的数字，待项目定形后，再调整到合适的大小
 #define DMEM_BUFFER_SIZE          1024
 
- * 2、 状态机和状态的buffer类型
+ * 2、 状态机和状态的buffer类型（由于C51架构单片机的内存架构和指针模型比较特殊，所以buffer内不再支持指针（因为难以预料用户要指向data/idata/xdata/pdata中的哪里））
  * 如果用户需要在状态机，或者各个状态中加添buffer，用于在各状态之间传递数据，则可能根据如下说明定义状态机/状态的buffer类型：
  * SM_BUFFER_NO		//状态机层面不定义buffer
  * SM_BUFFER_FULL	//状态机层面定义全量buffer
@@ -22,10 +22,13 @@
 #define ST_BUFFER_NO
 
  * 3、 状态机存放位置
- * 在51类单片机中，由于其可用的data空间较小，如果你希望状态机存放于xdata存储区，则需要定义如下的宏变量
-#define __C51__XDATAMODEL__
- * 如此以来，你在定义你的状态机对象时，也需要同步使用xData关键字，以声明其存储位置，像下面这样
- stateMachine_t xdata myFSM;
+ * 在51类单片机中，由于其可用的data空间较小，所以状态机存放于xdata存储区
+ * 💣 注意！注意！注意！💣：在你使用keil进行编译时，请务必将 Options->C51->Don’t use absolute register accesses 这一项打勾，这是为了避免将xData的低位地址误解析为寄存器地址，如下：
+ * ✅ Don’t use absolute register accesses
+
+ * 另外，建议你在定义状态机实例时，进行初始化操作，例如：
+ stateMachine_t myFSM = {0};
+ * 
 */
 #include "userSMCfg.h"
 
@@ -51,7 +54,7 @@ typedef enum{
 }smEventResult_t;
 
 #if defined(SM_BUFFER_FULL) || defined(ST_BUFFER_FULL)
-typedef struct {
+struct buffer_s {
 	bool b;
 	unsigned char ucAry[8];
 	signed char sc;
@@ -62,14 +65,10 @@ typedef struct {
     unsigned int ui;
 	long l;
 	unsigned long ul;
-    long long ll;
-    unsigned long long ull;
     float f;
-    double d;
-	void *ptr;
-} fullBuffer_t;
+};
 #elif defined(SM_BUFFER_PART) || defined(ST_BUFFER_PART)
-typedef struct {
+struct buffer_s {
 	union {
 		bool b;
 		signed char sc;
@@ -87,18 +86,9 @@ typedef struct {
 		float f;
 		unsigned char raw_32[4];
 	}d32;
-	
-	union {
-		long long ll;
-    	unsigned long long ull;
-		double d64;
-		unsigned char raw_64[8];
-	}d64;
-
-	void *ptr;
-} partBuffer_t;
+};
 #elif defined(SM_BUFFER_TINY) || defined(ST_BUFFER_TINY)
-typedef struct {
+struct buffer_s {
 	union {
 		bool b;
 		signed char sc;
@@ -107,12 +97,16 @@ typedef struct {
 		unsigned short us;
 		unsigned char raw_16[2];
 	}d16;
-} tinyBuffer_t;
+};
+#endif
+
+#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY) || defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
+typedef struct buffer_s buffer_t;
 #endif
 
 struct stateMachine_event_s;
 typedef struct stateMachineUnit_s smUnit_t;
-typedef struct stateMachine_s stateMachine_t;
+typedef struct stateMachine_s xdata stateMachine_t;
 
 typedef void (*smActionFunc_t)(smUnit_t xdata *);
 typedef smEventResult_t (*smEventFunc_t)(smUnit_t xdata *);
@@ -142,12 +136,8 @@ struct stateMachineUnit_s
 	uint16_t roundCounter;						// 如果1ms为周期计数，可记 65s
 
 	//一个通用的buffer，用于存放与实际实用场景相关的数据
-	#if defined(ST_BUFFER_FULL)
-	fullBuffer_t xdata buffer;
-	#elif defined(ST_BUFFER_PART)
-	partBuffer_t xdata buffer;
-	#elif defined(ST_BUFFER_TINY)
-	tinyBuffer_t xdata buffer;
+	#if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
+	buffer_t buffer;
 	#endif
 };
 
@@ -164,12 +154,8 @@ struct stateMachine_s
 	uint8_t stateIDs_Count;			//状态机的总状态数
 
 	// 定义一个buffer，用于存放与实际实用场景相关的数据
-	#if defined(SM_BUFFER_FULL)
-	fullBuffer_t xdata buffer;
-	#elif defined(SM_BUFFER_PART)
-	partBuffer_t xdata buffer;
-	#elif defined(SM_BUFFER_TINY)
-	tinyBuffer_t xdata buffer;
+	#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY)
+	buffer_t buffer;
 	#endif
 
 	// 报警处理函数，如果状态机遇到异常，可以通过该函数进行报警
