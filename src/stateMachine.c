@@ -22,8 +22,6 @@ void *DynMemGet(uint16_t byteSize) {
 初始化状态机
 */
 void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void)) {
-	int i;
-
 	pSm->stateID_default = stateID_default;
 	pSm->stateIDs_Count = stateIDs_count;
 	pSm->stateID = pSm->stateID_default;
@@ -57,7 +55,7 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 	}
 
 	//遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
-	for(i=0; i < pSm->stateIDs_Count; i++)
+	for(uint8_t i=0; i < pSm->stateIDs_Count; i++)
 	{
 		pSm->pSMChain[i].stateID = i;
 		pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;	 //默认的前一状态为 stateID_end
@@ -83,8 +81,6 @@ void fsm_init(stateMachine_t *pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 将指定的状态机，复位到默认的状态
 */
 void fsm_reset(stateMachine_t *pSm) {
-	int i;
-
 	if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
 		smUnit_t *st = &pSm->pSMChain[pSm->stateID];
 
@@ -98,7 +94,7 @@ void fsm_reset(stateMachine_t *pSm) {
 		pSm->stateID = pSm->stateID_default;
 
 		//复位各状态出现的次数值
-		for(i=0; i < pSm->stateIDs_Count; i++)
+		for(uint8_t i=0; i < pSm->stateIDs_Count; i++)
 		{
 			pSm->enterCounterOf[i] = 0;
 			pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;
