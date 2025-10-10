@@ -71,6 +71,18 @@ typedef enum{
 #define UNUSED(x) (x) = (x)
 #endif
 
+#ifndef DMEM_BUFFER_SIZE
+#error "please #define DMEM_BUFFER_SIZE //in userSMCfg.h"
+#elif DMEM_BUFFER_SIZE <= 0
+#error "DMEM_BUFFER_SIZE must be greater than 0!"
+#endif
+
+#ifndef SM_CYCLE_TIME_MS
+#error "please #define SM_CYCLE_TIME_MS //in userSMCfg.h"
+#elif SM_CYCLE_TIME_MS <= 0
+#error "SM_CYCLE_TIME_MS must be greater than 0!"
+#endif
+
 #ifndef CNTSOFms
 #define CNTSOFms(ms) ((uint16_t)((ms)/(SM_CYCLE_TIME_MS)))	// 计算多少个周期数为 ms 毫秒， T 为周期时间，单位为毫秒
 #endif
