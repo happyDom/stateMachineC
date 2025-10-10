@@ -21,7 +21,15 @@ typedef double              double64_t;
 
 /*
  * 你需要创建并完成一个 userSMCfg.h 文档，在该文档中根据需要，应完成以下内容的定义
- * 1、配置状态机层和状态层的数据buffer，如果你需要在不同的状态之间传递数据，这是个不错的选择
+
+ * 1、 状态机运行周期
+ * 由于状态机的运行周期，决定了状态机中 roundCounter 计数器的单位时间
+ * 例如：如果状态机的运行周期为 1ms，则 roundCounter 的单位时间为 1ms
+ * 如果状态机的运行周期为 10ms，则 roundCounter 的单位时间为 10ms
+ * 你需要根据你的项目实际情况，定义下面的宏变量
+ #define SM_CYCLE_TIME_MS         5    //状态机运行周期，单位为毫秒
+
+ * 2、配置状态机层和状态层的数据buffer，如果你需要在不同的状态之间传递数据，这是个不错的选择
  *
  * SM_BUFFER_NO		//状态机层面不定义buffer
  * SM_BUFFER_FULL	//状态机层面定义全量buffer
@@ -35,7 +43,7 @@ typedef double              double64_t;
  * ST_BUFFER_TINY	//状态层面定义最小buffer
 #define ST_BUFFER_NO
 
- * 2、定义变量 DMEM_BUFFER_SIZE 用于管理状态机使用的内存，在项目定形后，通过观察bufferUsed的值，适当的减小该变量的值
+ * 3、定义变量 DMEM_BUFFER_SIZE 用于管理状态机使用的内存，在项目定形后，通过观察bufferUsed的值，适当的减小该变量的值
 #define DMEM_BUFFER_SIZE          512
 
  * 提示： 声明状态机对象时，可以直接将对象初始化为0，例如：
@@ -58,6 +66,26 @@ typedef enum{
 
 #define IS_NULL(p) (NULL == (p))
 #define IS_pSafe(p) (NULL != (p))
+
+#ifndef DMEM_BUFFER_SIZE
+#error "please #define DMEM_BUFFER_SIZE //in userSMCfg.h"
+#elif DMEM_BUFFER_SIZE <= 0
+#error "DMEM_BUFFER_SIZE must be greater than 0!"
+#endif
+
+#ifndef SM_CYCLE_TIME_MS
+#error "please #define SM_CYCLE_TIME_MS //in userSMCfg.h"
+#elif SM_CYCLE_TIME_MS <= 0
+#error "SM_CYCLE_TIME_MS must be greater than 0!"
+#endif
+
+#ifndef CNTSOFms
+#define CNTSOFms(ms) ((uint32_t)((ms)/(SM_CYCLE_TIME_MS)))	// 计算多少个周期数为 ms 毫秒， T 为周期时间，单位为毫秒
+#endif
+
+#ifndef CNTSOFs
+#define CNTSOFs(s)  ((uint32_t)((s)*1000/(SM_CYCLE_TIME_MS)))	// 计算多少个周期数为 s 秒， T 为周期时间，单位为毫秒
+#endif
 
 typedef enum{
 	aWait=0,
