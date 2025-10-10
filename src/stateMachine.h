@@ -1,6 +1,17 @@
 #ifndef C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #define C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #include <stdint.h>
+
+/* 请认真阅读以下关于 typeDefine.h 文件的使用说明
+ * 首先，请在你的项目中创建一个 typeDefine.h 文件， 本状态机将引用这个文件
+ * 💣注意💣： 如果你的项目在编译时，报措提示本状态机所使用的某数据类型未定义，请根据你的平台情况，在 typeDefine.h 文档中进行补充定义，示例如下👇：
+typedef char                int8_t;
+typedef unsigned char       uint8_t;
+typedef int                 int16_t;
+typedef unsigned int        uint16_t;
+typedef long                int32_t;
+typedef unsigned long       uint32_t;
+*/
 #include "typeDefine.h"
 
 /* 请认真阅读以下关于 userSMCfg.h 文件的使用说明
