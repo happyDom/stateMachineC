@@ -60,8 +60,7 @@ typedef enum{
 #if defined(SM_BUFFER_FULL) || defined(ST_BUFFER_FULL)
 typedef struct {
 	bool b;
-	unsigned char ucAry[8];
-	signed char sc;
+	char c;
     unsigned char uc;
 	short s;
 	unsigned short us;
@@ -75,31 +74,53 @@ typedef struct {
 typedef struct {
 	union {
 		bool b;
-		signed char sc;
+		char c;
 		unsigned char uc;
 		short s;
 		unsigned short us;
-		unsigned char raw_16[2];
+
+		bool bAry[4];
+		char cAry[4];
+		unsigned char ucAry[4];
+		short sAry[2];
+		unsigned short usAry[2];
 	}d16;
 	
 	union {
+		bool b;
+		char c;
+		unsigned char uc;
+		short s;
+		unsigned short us;
 		int i;
     	unsigned int ui;
 		long l;
 		unsigned long ul;
 		float f;
-		unsigned char raw_32[4];
+		
+		bool bAry[8];
+		char cAry[8];
+		unsigned char ucAry[8];
+		short sAry[4];
+		unsigned short usAry[4];
+		int iAry[2];
+		unsigned int uiAry[2];
 	}d32;
 } buffer_t;
 #elif defined(SM_BUFFER_TINY) || defined(ST_BUFFER_TINY)
 typedef struct {
 	union {
 		bool b;
-		signed char sc;
+		char c;
 		unsigned char uc;
 		short s;
 		unsigned short us;
-		unsigned char raw_16[2];
+
+		bool bAry[4];
+		char cAry[4];
+		unsigned char ucAry[4];
+		short sAry[2];
+		unsigned short usAry[2];
 	}d16;
 } buffer_t;
 #endif
