@@ -62,11 +62,14 @@ typedef enum{
 typedef struct {
 	bool b;
 	int8_t i8;
-	uint8_t ui8;
+	uint8_t u8;
 	int16_t i16;
-	uint16_t ui16;
+	uint16_t u16;
 	int32_t i32;
-	uint32_t ui32;
+	uint32_t u32;
+	int64_t i64;
+	uint64_t u64;
+	
 	float32_t f32;
 } buffer_t;
 #elif defined(SM_BUFFER_PART) || defined(ST_BUFFER_PART)
@@ -74,30 +77,29 @@ typedef struct {
 	union {
 		bool b;
 		int8_t i8;
-		uint8_t ui8;
+		uint8_t u8;
 		int16_t i16;
-		uint16_t ui16;
-
+		uint16_t u16;
+		
 		bool bAry[2];
 		int8_t i8Ary[2];
-		uint8_t ui8Ary[2];
+		uint8_t u8Ary[2];
 	}d16;
 	
 	union {
 		bool b;
 		int8_t i8;
-		uint8_t ui8;
+		uint8_t u8;
 		int16_t i16;
-		uint16_t ui16;
+		uint16_t u16;
 		int32_t i32;
-		uint32_t ui32;
-		float32_t f32;
+		uint32_t u32;
 		
 		bool bAry[4];
 		int8_t i8Ary[4];
-		uint8_t ui8Ary[4];
+		uint8_t u8Ary[4];
 		int16_t i16Ary[2];
-		uint16_t ui16Ary[2];
+		uint16_t u16Ary[2];
 	}d32;
 } buffer_t;
 #elif defined(SM_BUFFER_TINY) || defined(ST_BUFFER_TINY)
@@ -105,13 +107,13 @@ typedef struct {
 	union {
 		bool b;
 		int8_t i8;
-		uint8_t ui8;
+		uint8_t u8;
 		int16_t i16;
-		uint16_t ui16;
-
+		uint16_t u16;
+		
 		bool bAry[2];
 		int8_t i8Ary[2];
-		uint8_t ui8Ary[2];
+		uint8_t u8Ary[2];
 	}d16;
 } buffer_t;
 #endif
