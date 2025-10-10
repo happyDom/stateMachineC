@@ -1,6 +1,7 @@
 #ifndef C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #define C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #include <stdint.h>
+#include "typeDefine.h"
 
 /*
  * 你需要创建并完成一个 userSMCfg.h 文档，在该文档中根据需要，应完成以下内容的定义
@@ -50,46 +51,68 @@ typedef enum{
 #if defined(SM_BUFFER_FULL) || defined(ST_BUFFER_FULL)
 typedef struct {
 	bool b;
-	unsigned char ucAry[8];
-	signed char sc;
-    unsigned char uc;
-	short s;
-	unsigned short us;
-    int i;
-    unsigned int ui;
-	long l;
-	unsigned long ul;
-    long long ll;
-    unsigned long long ull;
-    float f;
-    double d;
+	int8_t i8;
+	uint8_t u8;
+	int16_t i16;
+	uint16_t u16;
+	int32_t i32;
+	uint32_t u32;
+	int64_t i64;
+	uint64_t u64;
+	
+	float32_t f32;
+	double64_t d64;
+
 	void *ptr;
 } buffer_t;
 #elif defined(SM_BUFFER_PART) || defined(ST_BUFFER_PART)
 typedef struct {
 	union {
 		bool b;
-		signed char sc;
-		unsigned char uc;
-		short s;
-		unsigned short us;
-		unsigned char raw_16[2];
+		int8_t i8;
+		uint8_t u8;
+		int16_t i16;
+		uint16_t u16;
+		
+		bool bAry[2];
+		int8_t i8Ary[2];
+		uint8_t u8Ary[2];
 	}d16;
 	
 	union {
-		int i;
-    	unsigned int ui;
-		long l;
-		unsigned long ul;
-		float f;
-		unsigned char raw_32[4];
+		bool b;
+		int8_t i8;
+		uint8_t u8;
+		int16_t i16;
+		uint16_t u16;
+		int32_t i32;
+		uint32_t u32;
+		
+		bool bAry[4];
+		int8_t i8Ary[4];
+		uint8_t u8Ary[4];
+		int16_t i16Ary[2];
+		uint16_t u16Ary[2];
 	}d32;
 	
 	union {
-		long long ll;
-    	unsigned long long ull;
-		double d64;
-		unsigned char raw_64[8];
+		bool b;
+		int8_t i8;
+		uint8_t u8;
+		int16_t i16;
+		uint16_t u16;
+		int32_t i32;
+		uint32_t u32;
+		int64_t i64;
+		uint64_t u64;
+		
+		bool bAry[8];
+		int8_t i8Ary[8];
+		uint8_t u8Ary[8];
+		int16_t i16Ary[4];
+		uint16_t u16Ary[4];
+		int32_t i32Ary[2];
+		uint32_t u32Ary[2];
 	}d64;
 
 	void *ptr;
@@ -98,11 +121,14 @@ typedef struct {
 typedef struct {
 	union {
 		bool b;
-		signed char sc;
-		unsigned char uc;
-		short s;
-		unsigned short us;
-		unsigned char raw_16[2];
+		int8_t i8;
+		uint8_t u8;
+		int16_t i16;
+		uint16_t u16;
+		
+		bool bAry[2];
+		int8_t i8Ary[2];
+		uint8_t u8Ary[2];
 	}d16;
 } buffer_t;
 #endif
