@@ -1,5 +1,4 @@
 #include "stateMachine.h"
-#include "userSMCfg.h"
 
 /**
  * 这里会预先在stack上申请一块指定大小的内存空间，用于满足后续状态机的内存需求，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
@@ -27,7 +26,7 @@ void *DynMemGet(uint16_t byteSize)
 */
 void fsm_init(stateMachine_t xdata *pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void))
 {
-	int i;
+	uint8_t i;
 
 	pSm->stateID_default = stateID_default;
 	pSm->stateIDs_Count = stateIDs_count;
@@ -71,7 +70,7 @@ void fsm_init(stateMachine_t xdata *pSm, uint8_t stateIDs_count, uint8_t stateID
 */
 void fsm_reset(stateMachine_t xdata *pSm) {
 	smUnit_t xdata *st;
-	int i;
+	uint8_t i;
 
 	if(IS_pSafe(pSm) && IS_pSafe(pSm->pSMChain)){
 		st = &pSm->pSMChain[pSm->stateID];
@@ -101,6 +100,7 @@ void fsm_reset(stateMachine_t xdata *pSm) {
 void fsm_eventSignUp(stateMachine_t xdata *pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEvent) {
 	struct stateMachine_event_s xdata *stEvent = NULL;
 	struct stateMachine_event_s xdata *p = NULL;
+	
 	//如果 __pStateMachine 没有初始化, 无法注册事件,直接返回
 	if (IS_NULL(pSm)||IS_NULL(pSm->pSMChain)){return;}
 	
