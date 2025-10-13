@@ -84,7 +84,7 @@ typedef enum{
 #endif
 
 #ifndef CNTSOFs
-#define CNTSOFs(s)  ((uint32_t)((s)*1000/(SM_CYCLE_TIME_MS)))	// 计算多少个周期数为 s 秒， T 为周期时间，单位为毫秒
+#define CNTSOFs(s)  ((uint32_t)((s)*1000.0f/(SM_CYCLE_TIME_MS)))	// 计算多少个周期数为 s 秒， T 为周期时间，单位为毫秒
 #endif
 
 typedef enum{
