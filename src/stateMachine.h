@@ -51,13 +51,8 @@ typedef unsigned long       uint32_t;
 */
 #include "userSMCfg.h"
 
-typedef enum{
-	false=0,
-	true=!false
-} _dyyBool;
-
 #ifndef bool
-#define bool _dyyBool
+typedef enum { false = 0, true = 1 } bool;
 #endif
 
 #ifndef NULL
