@@ -52,12 +52,7 @@ stateMachine_t myFSM = {0};
 #include "userSMCfg.h"
 
 #ifndef bool
-	typedef enum{
-	false=0,
-	true=!false
-}_dyyBool;
-
-#define bool _dyyBool
+typedef enum { false = 0, true = 1 } bool;
 #endif
 
 #ifndef NULL
