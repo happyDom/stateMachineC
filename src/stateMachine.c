@@ -1,4 +1,7 @@
 #include "stateMachine.h"
+#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY) || defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
+#include "string.h"
+#endif
 
 /**
  * 这里会预先在stack上申请一块指定大小的内存空间，用于满足后续状态机的内存需求，而不占用Heap空间，你可以根据实际情况合适调整 stack和heap的大小
@@ -84,11 +87,21 @@ void fsm_reset(stateMachine_t xdata *pSm) {
 		pSm->roundCounter = 0;	//复位状态机的轮询次数
 		pSm->stateID = pSm->stateID_default;
 
+		// 复位状态机buffer
+		#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY)
+		memset(&pSm->buffer, 0, sizeof(smBuffer_t));
+		#endif
+		
 		//复位各状态出现的次数值
 		for(i=0; i < pSm->stateIDs_Count; i++)
 		{
 			pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;
 			pSm->pSMChain[i].latched = false;
+			
+			// 复位各状态buffer
+			#if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
+			memset(&pSm->pSMChain[i].buffer, 0, sizeof(stBuffer_t));
+			#endif
 		}
 	}
 }
