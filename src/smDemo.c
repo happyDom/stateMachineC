@@ -36,7 +36,7 @@ smEventResult_t pressD(smUnit_t *pSt) {return 'd' == inputKey;};
 
 void smDemoBuild()
 {
-    fsm_init(&demoSM, stateID_count, 0);
+    fsm_init(&demoSM, stateID_count, 0, NULL);
     
     // 注册状态动作
     // 为每一个状态指定进入事件，逗留事件和退出事件

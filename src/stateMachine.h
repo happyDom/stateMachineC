@@ -87,7 +87,7 @@ typedef enum{
 	go=1,
 }smEventResult_t;
 
-#if defined(SM_BUFFER_FULL) || defined(ST_BUFFER_FULL)
+#if defined(SM_BUFFER_FULL)
 typedef struct {
 	bool b;
 	int8_t i8;
@@ -103,8 +103,8 @@ typedef struct {
 	double64_t d64;
 
 	void *ptr;
-} buffer_t;
-#elif defined(SM_BUFFER_PART) || defined(ST_BUFFER_PART)
+} smBuffer_t;
+#elif defined(SM_BUFFER_PART)
 typedef struct {
 	union {
 		bool b;
@@ -155,8 +155,8 @@ typedef struct {
 	}d64;
 
 	void *ptr;
-} buffer_t;
-#elif defined(SM_BUFFER_TINY) || defined(ST_BUFFER_TINY)
+} smBuffer_t;
+#elif defined(SM_BUFFER_TINY)
 typedef struct {
 	union {
 		bool b;
@@ -169,7 +169,92 @@ typedef struct {
 		int8_t i8Ary[2];
 		uint8_t u8Ary[2];
 	}d16;
-} buffer_t;
+} smBuffer_t;
+#endif
+
+#if defined(ST_BUFFER_FULL)
+typedef struct {
+	bool b;
+	int8_t i8;
+	uint8_t u8;
+	int16_t i16;
+	uint16_t u16;
+	int32_t i32;
+	uint32_t u32;
+	int64_t i64;
+	uint64_t u64;
+	
+	float32_t f32;
+	double64_t d64;
+
+	void *ptr;
+} stBuffer_t;
+#elif defined(ST_BUFFER_PART)
+typedef struct {
+	union {
+		bool b;
+		int8_t i8;
+		uint8_t u8;
+		int16_t i16;
+		uint16_t u16;
+		
+		bool bAry[2];
+		int8_t i8Ary[2];
+		uint8_t u8Ary[2];
+	}d16;
+	
+	union {
+		bool b;
+		int8_t i8;
+		uint8_t u8;
+		int16_t i16;
+		uint16_t u16;
+		int32_t i32;
+		uint32_t u32;
+		
+		bool bAry[4];
+		int8_t i8Ary[4];
+		uint8_t u8Ary[4];
+		int16_t i16Ary[2];
+		uint16_t u16Ary[2];
+	}d32;
+	
+	union {
+		bool b;
+		int8_t i8;
+		uint8_t u8;
+		int16_t i16;
+		uint16_t u16;
+		int32_t i32;
+		uint32_t u32;
+		int64_t i64;
+		uint64_t u64;
+		
+		bool bAry[8];
+		int8_t i8Ary[8];
+		uint8_t u8Ary[8];
+		int16_t i16Ary[4];
+		uint16_t u16Ary[4];
+		int32_t i32Ary[2];
+		uint32_t u32Ary[2];
+	}d64;
+
+	void *ptr;
+} stBuffer_t;
+#elif defined(ST_BUFFER_TINY)
+typedef struct {
+	union {
+		bool b;
+		int8_t i8;
+		uint8_t u8;
+		int16_t i16;
+		uint16_t u16;
+		
+		bool bAry[2];
+		int8_t i8Ary[2];
+		uint8_t u8Ary[2];
+	}d16;
+} stBuffer_t;
 #endif
 
 struct stateMachine_event_s;
@@ -205,7 +290,7 @@ struct stateMachineUnit_s
 	
 	//一个通用的buffer，用于存放与实际实用场景相关的数据
 	#if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
-	buffer_t buffer;
+	stBuffer_t buffer;
 	#endif
 };
 
@@ -223,7 +308,7 @@ struct stateMachine_s
 
 	// 定义一个buffer，用于存放与实际实用场景相关的数据
 	#if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY)
-	buffer_t buffer;
+	smBuffer_t buffer;
 	#endif
 
 	// 报警处理函数，如果状态机遇到异常，可以通过该函数进行报警
