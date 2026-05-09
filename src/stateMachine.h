@@ -1,6 +1,7 @@
 #ifndef C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #define C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #include <stdint.h>
+#include <stdbool.h>
 
 /* 请认真阅读以下关于 typeDefine.h 文件的使用说明
  * 首先，请在你的项目中创建一个 typeDefine.h 文件， 本状态机将引用这个文件
@@ -50,10 +51,6 @@ typedef double              double64_t;
 stateMachine_t myFSM = {0};
 */
 #include "userSMCfg.h"
-
-#ifndef bool
-typedef enum { false = 0, true = 1 } bool;
-#endif
 
 #ifndef NULL
 #define NULL ((void *)0)
