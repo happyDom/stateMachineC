@@ -2,23 +2,7 @@
 #define C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #include <stdbool.h>
 #include <stdint.h>
-
-/* 请认真阅读以下关于 typeDefine.h 文件的使用说明
- * 首先，请在你的项目中创建一个 typeDefine.h 文件， 本状态机将引用这个文件
- * 💣注意💣： 如果你的项目在编译时，报措提示本状态机所使用的某数据类型未定义，请根据你的平台情况，在 typeDefine.h 文档中进行补充定义，示例如下👇：
-typedef char                int8_t;
-typedef unsigned char       uint8_t;
-typedef int                 int16_t;
-typedef unsigned int        uint16_t;
-typedef long                int32_t;
-typedef unsigned long       uint32_t;
-typedef long long           int64_t;
-typedef unsigned long long  uint64_t;
-
-typedef float               float32_t;
-typedef double              double64_t;
-*/
-#include "typeDefine.h"
+#include <stddef.h>
 
 /*
  * 你需要创建并完成一个 userSMCfg.h 文档，在该文档中根据需要，应完成以下内容的定义
@@ -65,10 +49,18 @@ stateMachine_t myFSM = {0};
 #error "DMEM_BUFFER_SIZE must be greater than 0!"
 #endif
 
+#if ((defined(SM_BUFFER_FULL) ? 1 : 0) + (defined(SM_BUFFER_PART) ? 1 : 0) + (defined(SM_BUFFER_TINY) ? 1 : 0) > 1)
+#error "Only one of SM_BUFFER_FULL / SM_BUFFER_PART / SM_BUFFER_TINY can be defined"
+#endif
+
 #ifndef SM_CYCLE_TIME_MS
 #error "please #define SM_CYCLE_TIME_MS //in userSMCfg.h"
 #elif SM_CYCLE_TIME_MS <= 0
 #error "SM_CYCLE_TIME_MS must be greater than 0!"
+#endif
+
+#if ((defined(ST_BUFFER_FULL) ? 1 : 0) + (defined(ST_BUFFER_PART) ? 1 : 0) + (defined(ST_BUFFER_TINY) ? 1 : 0) > 1)
+#error "Only one of ST_BUFFER_FULL / ST_BUFFER_PART / ST_BUFFER_TINY can be defined"
 #endif
 
 #ifndef CNTSOFms
@@ -93,11 +85,7 @@ typedef struct {
     uint16_t u16;
     int32_t i32;
     uint32_t u32;
-    int64_t i64;
-    uint64_t u64;
-
-    float32_t f32;
-    double64_t d64;
+    float f32;
 
     void* ptr;
 } smBuffer_t;
@@ -123,6 +111,7 @@ typedef struct {
         uint16_t u16;
         int32_t i32;
         uint32_t u32;
+        float f32;
 
         bool bAry[4];
         int8_t i8Ary[4];
@@ -130,26 +119,6 @@ typedef struct {
         int16_t i16Ary[2];
         uint16_t u16Ary[2];
     } d32;
-
-    union {
-        bool b;
-        int8_t i8;
-        uint8_t u8;
-        int16_t i16;
-        uint16_t u16;
-        int32_t i32;
-        uint32_t u32;
-        int64_t i64;
-        uint64_t u64;
-
-        bool bAry[8];
-        int8_t i8Ary[8];
-        uint8_t u8Ary[8];
-        int16_t i16Ary[4];
-        uint16_t u16Ary[4];
-        int32_t i32Ary[2];
-        uint32_t u32Ary[2];
-    } d64;
 
     void* ptr;
 } smBuffer_t;
@@ -178,11 +147,7 @@ typedef struct {
     uint16_t u16;
     int32_t i32;
     uint32_t u32;
-    int64_t i64;
-    uint64_t u64;
-
-    float32_t f32;
-    double64_t d64;
+    float f32;
 
     void* ptr;
 } stBuffer_t;
@@ -208,6 +173,7 @@ typedef struct {
         uint16_t u16;
         int32_t i32;
         uint32_t u32;
+        float f32;
 
         bool bAry[4];
         int8_t i8Ary[4];
@@ -215,26 +181,6 @@ typedef struct {
         int16_t i16Ary[2];
         uint16_t u16Ary[2];
     } d32;
-
-    union {
-        bool b;
-        int8_t i8;
-        uint8_t u8;
-        int16_t i16;
-        uint16_t u16;
-        int32_t i32;
-        uint32_t u32;
-        int64_t i64;
-        uint64_t u64;
-
-        bool bAry[8];
-        int8_t i8Ary[8];
-        uint8_t u8Ary[8];
-        int16_t i16Ary[4];
-        uint16_t u16Ary[4];
-        int32_t i32Ary[2];
-        uint32_t u32Ary[2];
-    } d64;
 
     void* ptr;
 } stBuffer_t;
@@ -264,7 +210,7 @@ typedef smEventResult_t (*smEventFunc_t)(smUnit_t*);
 struct stateMachine_actionMap_s {
     smActionFunc_t pEnterAction;
     smActionFunc_t pDoAction;
-    smActionFunc_t pExistAction;
+    smActionFunc_t pExitAction;
 };
 
 struct stateMachine_event_s {
@@ -278,7 +224,7 @@ struct stateMachineUnit_s {
     uint8_t stateID_l;                        // 状态机的前一个状态
     uint8_t stateID;                          // 当前状态循环的状态
     struct stateMachine_actionMap_s actions;  // 在本状态时需要执行的动作
-    struct stateMachine_event_s* events;      // 在本状态时，需要进行关注的事件，这是一个数组地址
+    struct stateMachine_event_s* events;      // 在本状态时，需要进行关注的事件，这是事件链表的表头地址
     uint32_t roundCounter;                    // 这个计数器显示了在本状态期间，状态机轮询的次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
     stateMachine_t* pSm;                      // 状态机的指针，这使得状态单元可以使用状态机中的信息
 
@@ -296,7 +242,7 @@ struct stateMachine_s {
     uint8_t stateID;                           // 标记当前状态机的状态
     uint8_t stateID_default;                   // 状态机的默认状态
     uint8_t stateIDs_Count;                    // 状态机的总状态数
-    uint32_t* enterCounterOf;                  // 一个数组，用于记录状态机中每一个状态出现的次数，在对应状态退出时进行计数
+    uint32_t* enterCounterOf;                  // 一个数组，用于记录状态机中每一个状态出现的次数，在对应状态进入时进行计数
     uint32_t roundCounter;                     // 记录状态机的轮询次数
 
 // 定义一个buffer，用于存放与实际实用场景相关的数据
@@ -313,7 +259,7 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 // 注册跳转事件/条件
 void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing);
 // 注册行为动作
-void fsm_actionSignUp(stateMachine_t* pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExist);
+void fsm_actionSignUp(stateMachine_t* pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExit);
 // 复位状态机：将状态机的运行状态复位到默认状态
 void fsm_reset(stateMachine_t* pSm);
 // 运行一次指定的状态机
