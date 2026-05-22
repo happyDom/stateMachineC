@@ -9,7 +9,6 @@
  */
 static uint16_t xdata bufferUsed = 0;                  // 已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
 static uint8_t xdata DMEMORY[DMEM_BUFFER_SIZE] = {0};  // 状态机使用的内存池
-void xdata* dyMM;                                      // 用于临时存放申请到的内存
 
 // 管理DMEMORY资源的申请事务
 void* DynMemGet(uint16_t byteSize) {
@@ -29,7 +28,21 @@ void* DynMemGet(uint16_t byteSize) {
 初始化状态机
 */
 void fsm_init(stateMachine_t xdata* pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void)) {
+    void xdata* dyMM;  // 用于临时存放申请到的内存
     uint8_t i;
+
+    if (IS_NULL(pSm)) {
+        while (1) {
+        }
+    }
+
+    if (stateID_default >= stateIDs_count || stateIDs_count == 0) {
+        if (IS_pSafe(warningFunc)) {
+            warningFunc();
+        }
+        while (1) {
+        }
+    }
 
     pSm->stateID_default = stateID_default;
     pSm->stateIDs_Count = stateIDs_count;
@@ -60,7 +73,7 @@ void fsm_init(stateMachine_t xdata* pSm, uint8_t stateIDs_count, uint8_t stateID
         pSm->pSMChain[i].latched = false;
         pSm->pSMChain[i].actions.pDoAction = NULL;
         pSm->pSMChain[i].actions.pEnterAction = NULL;
-        pSm->pSMChain[i].actions.pExistAction = NULL;
+        pSm->pSMChain[i].actions.pExitAction = NULL;
         pSm->pSMChain[i].events = NULL;
         pSm->pSMChain[i].pSm = pSm;  // 登记状态机的指针
 
@@ -73,6 +86,7 @@ void fsm_init(stateMachine_t xdata* pSm, uint8_t stateIDs_count, uint8_t stateID
 将指定的状态机，复位到默认的状态
 */
 void fsm_reset(stateMachine_t xdata* pSm) {
+    void xdata* dyMM;  // 用于临时存放申请到的内存
     smUnit_t xdata* st;
     uint8_t i;
 
@@ -80,8 +94,8 @@ void fsm_reset(stateMachine_t xdata* pSm) {
         st = &pSm->pSMChain[pSm->stateID];
 
         st->latched = false;  // 解除当前状态的状态锁
-        if (IS_pSafe(st->actions.pExistAction)) {
-            st->actions.pExistAction(st);
+        if (IS_pSafe(st->actions.pExitAction)) {
+            st->actions.pExitAction(st);
         }  // 执行当前状的退出事件
         // 考虑到状态机复位后，状态机未必能及时轮询运行（例如子状态的状态机，依懒于父状态机的轮询调用），所以：
         // 新状态的 enter 事件，将在状态机轮询时执行，这样可以保障状态机执行是连续的
@@ -157,7 +171,7 @@ void fsm_eventSignUp(stateMachine_t xdata* pSm, uint8_t stateID, uint8_t nextSta
 /*
 向指定的状态机注册动作,将指定的事件注册到对应的状态下
 */
-void fsm_actionSignUp(stateMachine_t xdata* pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExist) {
+void fsm_actionSignUp(stateMachine_t xdata* pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExit) {
     // 如果状态机或者状态链没有初始化, 无法注册动作,直接返回
     if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)) {
         return;
@@ -170,7 +184,7 @@ void fsm_actionSignUp(stateMachine_t xdata* pSm, uint8_t stateID, smActionFunc_t
 
     pSm->pSMChain[stateID].actions.pEnterAction = pEnter;
     pSm->pSMChain[stateID].actions.pDoAction = pDo;
-    pSm->pSMChain[stateID].actions.pExistAction = pExist;
+    pSm->pSMChain[stateID].actions.pExitAction = pExit;
 }
 
 /*
@@ -244,9 +258,9 @@ void fsm_run(stateMachine_t xdata* pSm) {
             // 更新状态ID
             pSm->stateID = stNew->stateID;
 
-            // 执行当前状态的 exist 动作
-            if (IS_pSafe(st->actions.pExistAction)) {
-                st->actions.pExistAction(st);
+            // 执行当前状态的 exit 动作
+            if (IS_pSafe(st->actions.pExitAction)) {
+                st->actions.pExitAction(st);
             }
 
             stNew->roundCounter = 0;  // 复位新状态计数器
@@ -261,7 +275,7 @@ void fsm_run(stateMachine_t xdata* pSm) {
             }  // 执行新状态的 do 动作
             if (IS_pSafe(pSm->actionAfterDo)) {
                 pSm->actionAfterDo(stNew);
-            }     // 如果有actionAfterDo事件，则执行之
+            }  // 如果有actionAfterDo事件，则执行之
         } else {  // 如果继续留在当前状态，则执行当前状态的逗留活动
             // 执行本状态的逗留活动
             if (IS_pSafe(st->actions.pDoAction)) {
