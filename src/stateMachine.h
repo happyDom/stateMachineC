@@ -2,20 +2,31 @@
 #define C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #include <stdbool.h>
 #include <stdint.h>
-#include <stddef.h>
 
-/*
- * 你需要创建并完成一个 userSMCfg.h 文档，在该文档中根据需要，应完成以下内容的定义
+/* 请认真阅读以下关于 typeDefine.h 文件的使用说明
+ * 首先，请在你的项目中创建一个 typeDefine.h 文件， 本状态机将引用这个文件
+ * 💣注意💣： 如果你的项目在编译时，报措提示本状态机所使用的某数据类型未定义，请根据你的平台情况，在 typeDefine.h 文档中进行补充定义，示例如下👇：
+typedef char                int8_t;
+typedef unsigned char       uint8_t;
+typedef int                 int16_t;
+typedef unsigned int        uint16_t;
+*/
+#include "typeDefine.h"
 
- * 1、 状态机运行周期
+/* 请认真阅读以下关于 userSMCfg.h 文件的使用说明
+ * 1、 状态机内存池管理
+ * 用户需要定义下面的宏变量，来管理状态机使用的内存池，其值为内存池的byte数量， 此处建议设置一个比较大的数字，待项目定形后，再调整到合适的大小
+#define DMEM_BUFFER_SIZE          1024
+
+ * 2、 状态机运行周期
  * 由于状态机的运行周期，决定了状态机中 roundCounter 计数器的单位时间
  * 例如：如果状态机的运行周期为 1ms，则 roundCounter 的单位时间为 1ms
  * 如果状态机的运行周期为 10ms，则 roundCounter 的单位时间为 10ms
  * 你需要根据你的项目实际情况，定义下面的宏变量
  #define SM_CYCLE_TIME_MS         5    //状态机运行周期，单位为毫秒
 
- * 2、配置状态机层和状态层的数据buffer，如果你需要在不同的状态之间传递数据，这是个不错的选择
- *
+ * 3、 状态机和状态的buffer类型（由于C51架构单片机的内存架构和指针模型比较特殊，所以buffer内不再支持指针（因为难以预料用户要指向data/idata/xdata/pdata中的哪里））
+ * 如果用户需要在状态机，或者各个状态中加添buffer，用于在各状态之间传递数据，则可能根据如下说明定义状态机/状态的buffer类型：
  * SM_BUFFER_NO		//状态机层面不定义buffer
  * SM_BUFFER_FULL	//状态机层面定义全量buffer
  * SM_BUFFER_PART	//状态机层面定义部分buffer
@@ -28,11 +39,14 @@
  * ST_BUFFER_TINY	//状态层面定义最小buffer
 #define ST_BUFFER_NO
 
- * 3、定义变量 DMEM_BUFFER_SIZE 用于管理状态机使用的内存，在项目定形后，通过观察bufferUsed的值，适当的减小该变量的值
-#define DMEM_BUFFER_SIZE          512
+ * 4、 状态机存放位置
+ * 在51类单片机中，由于其可用的data空间较小，所以状态机存放于xdata存储区
+ * 💣 注意！注意！注意！💣：在你使用keil进行编译时，请务必将 Options->C51->Don’t use absolute register accesses 这一项打勾，这是为了避免将xData的低位地址误解析为寄存器地址，如下：
+ * ✅ Don’t use absolute register accesses
 
- * 提示： 声明状态机对象时，可以直接将对象初始化为0，例如：
-stateMachine_t myFSM = {0};
+ * 另外，建议你在定义状态机实例时，进行初始化操作，例如：
+ stateMachine_t myFSM = {0};
+ *
 */
 #include "userSMCfg.h"
 
@@ -40,17 +54,19 @@ stateMachine_t myFSM = {0};
 #define NULL ((void*)0)
 #endif
 
+// 该实现依赖 “内存池首地址非 0” 这一前提；
+// 若链接布局变化，需要重新验证指针非空判断是否仍然成立
 #define IS_NULL(p) (NULL == (p))
 #define IS_pSafe(p) (NULL != (p))
+
+#ifndef UNUSED
+#define UNUSED(x) ((void)(x))
+#endif
 
 #ifndef DMEM_BUFFER_SIZE
 #error "please #define DMEM_BUFFER_SIZE //in userSMCfg.h"
 #elif DMEM_BUFFER_SIZE <= 0
 #error "DMEM_BUFFER_SIZE must be greater than 0!"
-#endif
-
-#if ((defined(SM_BUFFER_FULL) ? 1 : 0) + (defined(SM_BUFFER_PART) ? 1 : 0) + (defined(SM_BUFFER_TINY) ? 1 : 0) > 1)
-#error "Only one of SM_BUFFER_FULL / SM_BUFFER_PART / SM_BUFFER_TINY can be defined"
 #endif
 
 #ifndef SM_CYCLE_TIME_MS
@@ -59,16 +75,28 @@ stateMachine_t myFSM = {0};
 #error "SM_CYCLE_TIME_MS must be greater than 0!"
 #endif
 
-#if ((defined(ST_BUFFER_FULL) ? 1 : 0) + (defined(ST_BUFFER_PART) ? 1 : 0) + (defined(ST_BUFFER_TINY) ? 1 : 0) > 1)
-#error "Only one of ST_BUFFER_FULL / ST_BUFFER_PART / ST_BUFFER_TINY can be defined"
+#if defined(SM_BUFFER_FULL) && defined(SM_BUFFER_PART)
+#error "you can define one of SM_BUFFER_FULL, SM_BUFFER_PART or SM_BUFFER_TINY"
+#elif defined(SM_BUFFER_PART) && defined(SM_BUFFER_TINY)
+#error "you can define one of SM_BUFFER_FULL, SM_BUFFER_PART or SM_BUFFER_TINY"
+#elif defined(SM_BUFFER_TINY) && defined(SM_BUFFER_FULL)
+#error "you can define one of SM_BUFFER_FULL, SM_BUFFER_PART or SM_BUFFER_TINY"
+#endif
+
+#if defined(ST_BUFFER_FULL) && defined(ST_BUFFER_PART)
+#error "you can define one of ST_BUFFER_FULL, ST_BUFFER_PART or ST_BUFFER_TINY"
+#elif defined(ST_BUFFER_PART) && defined(ST_BUFFER_TINY)
+#error "you can define one of ST_BUFFER_FULL, ST_BUFFER_PART or ST_BUFFER_TINY"
+#elif defined(ST_BUFFER_TINY) && defined(ST_BUFFER_FULL)
+#error "you can define one of ST_BUFFER_FULL, ST_BUFFER_PART or ST_BUFFER_TINY"
 #endif
 
 #ifndef CNTSOFms
-#define CNTSOFms(ms) ((uint32_t)((ms) / (SM_CYCLE_TIME_MS)))  // 计算多少个周期数为 ms 毫秒， T 为周期时间，单位为毫秒
+#define CNTSOFms(ms) ((uint16_t)((ms) / (SM_CYCLE_TIME_MS)))  // 计算多少个周期数为 ms 毫秒， T 为周期时间，单位为毫秒
 #endif
 
 #ifndef CNTSOFs
-#define CNTSOFs(s) ((uint32_t)((s) * 1000.0f / (SM_CYCLE_TIME_MS)))  // 计算多少个周期数为 s 秒， T 为周期时间，单位为毫秒
+#define CNTSOFs(s) ((uint16_t)((s) * 1000.0f / (SM_CYCLE_TIME_MS)))  // 计算多少个周期数为 s 秒， T 为周期时间，单位为毫秒
 #endif
 
 typedef enum {
@@ -83,14 +111,15 @@ typedef struct {
     uint8_t u8;
     int16_t i16;
     uint16_t u16;
-    int32_t i32;
-    uint32_t u32;
     float f32;
-
-    void* ptr;
 } smBuffer_t;
 #elif defined(SM_BUFFER_PART)
 typedef struct {
+    union {
+        bool b;
+        int8_t i8;
+        uint8_t u8;
+    } d8;
     union {
         bool b;
         int8_t i8;
@@ -102,25 +131,6 @@ typedef struct {
         int8_t i8Ary[2];
         uint8_t u8Ary[2];
     } d16;
-
-    union {
-        bool b;
-        int8_t i8;
-        uint8_t u8;
-        int16_t i16;
-        uint16_t u16;
-        int32_t i32;
-        uint32_t u32;
-        float f32;
-
-        bool bAry[4];
-        int8_t i8Ary[4];
-        uint8_t u8Ary[4];
-        int16_t i16Ary[2];
-        uint16_t u16Ary[2];
-    } d32;
-
-    void* ptr;
 } smBuffer_t;
 #elif defined(SM_BUFFER_TINY)
 typedef struct {
@@ -145,14 +155,15 @@ typedef struct {
     uint8_t u8;
     int16_t i16;
     uint16_t u16;
-    int32_t i32;
-    uint32_t u32;
     float f32;
-
-    void* ptr;
 } stBuffer_t;
 #elif defined(ST_BUFFER_PART)
 typedef struct {
+    union {
+        bool b;
+        int8_t i8;
+        uint8_t u8;
+    } d8;
     union {
         bool b;
         int8_t i8;
@@ -164,25 +175,6 @@ typedef struct {
         int8_t i8Ary[2];
         uint8_t u8Ary[2];
     } d16;
-
-    union {
-        bool b;
-        int8_t i8;
-        uint8_t u8;
-        int16_t i16;
-        uint16_t u16;
-        int32_t i32;
-        uint32_t u32;
-        float f32;
-
-        bool bAry[4];
-        int8_t i8Ary[4];
-        uint8_t u8Ary[4];
-        int16_t i16Ary[2];
-        uint16_t u16Ary[2];
-    } d32;
-
-    void* ptr;
 } stBuffer_t;
 #elif defined(ST_BUFFER_TINY)
 typedef struct {
@@ -202,10 +194,10 @@ typedef struct {
 
 struct stateMachine_event_s;
 typedef struct stateMachineUnit_s smUnit_t;
-typedef struct stateMachine_s stateMachine_t;
+typedef struct stateMachine_s xdata stateMachine_t;  // stateMachine_t 类型默认存放于 xdata
 
-typedef void (*smActionFunc_t)(smUnit_t*);
-typedef smEventResult_t (*smEventFunc_t)(smUnit_t*);
+typedef void (*smActionFunc_t)(smUnit_t xdata*);
+typedef smEventResult_t (*smEventFunc_t)(smUnit_t xdata*);
 
 struct stateMachine_actionMap_s {
     smActionFunc_t pEnterAction;
@@ -214,9 +206,9 @@ struct stateMachine_actionMap_s {
 };
 
 struct stateMachine_event_s {
+    uint8_t nextState;
     smEventFunc_t pEventForGoing;
-    uint8_t nextState;                       // 目标状态
-    struct stateMachine_event_s* nextEvent;  // 下一个事件
+    struct stateMachine_event_s xdata* nextEvent;  // 下一个事件
 };  // 这是一个单向链表,用于登记多个事件
 
 struct stateMachineUnit_s {
@@ -224,9 +216,9 @@ struct stateMachineUnit_s {
     uint8_t stateID_l;                        // 状态机的前一个状态
     uint8_t stateID;                          // 当前状态循环的状态
     struct stateMachine_actionMap_s actions;  // 在本状态时需要执行的动作
-    struct stateMachine_event_s* events;      // 在本状态时，需要进行关注的事件，这是事件链表的表头地址
-    uint32_t roundCounter;                    // 这个计数器显示了在本状态期间，状态机轮询的次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
-    stateMachine_t* pSm;                      // 状态机的指针，这使得状态单元可以使用状态机中的信息
+    struct stateMachine_event_s xdata* events;
+    stateMachine_t xdata* pSm;
+    uint16_t roundCounter;  // 如果1ms为周期计数，可记 65s
 
 // 一个通用的buffer，用于存放与实际实用场景相关的数据
 #if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
@@ -236,32 +228,25 @@ struct stateMachineUnit_s {
 
 struct stateMachine_s {
     bool latched;                              // 状态机锁，为真时，状态机不运行任何状态的动作，不检测任何事件
-    smUnit_t* pSMChain;                        // 存放状态单元的数组空间的地址
-    smActionFunc_t actionOnChangeBeforeEnter;  // 状态切换前要做的动作，参数是即将要切换到的目标状态实例
-    smActionFunc_t actionAfterDo;              // 在每个do事件后执行的动作
-    uint8_t stateID;                           // 标记当前状态机的状态
-    uint8_t stateID_default;                   // 状态机的默认状态
-    uint8_t stateIDs_Count;                    // 状态机的总状态数
-    uint32_t* enterCounterOf;                  // 一个数组，用于记录状态机中每一个状态出现的次数，在对应状态进入时进行计数
-    uint32_t roundCounter;                     // 记录状态机的轮询次数
+    smActionFunc_t actionOnChangeBeforeEnter;  // 状态切换前要做的动作, 参数是即将要切换的目标状态
+    smActionFunc_t actionAfterDo;              // 在每个状态的do事件完成后，要执行的动作
+
+    uint16_t roundCounter;
+    uint8_t stateID;          // 标记当前状态机的状态
+    uint8_t stateID_default;  // 状态机的默认状态
+    uint8_t stateIDs_Count;   // 状态机的总状态数
+    smUnit_t xdata* pSMChain;
 
 // 定义一个buffer，用于存放与实际实用场景相关的数据
 #if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY)
     smBuffer_t buffer;
 #endif
-
-    // 报警处理函数，如果状态机遇到异常，可以通过该函数进行报警
-    void (*warningOn)(void);
 };
 
-// 初始化状态表
-void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void));
-// 注册跳转事件/条件
-void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing);
-// 注册行为动作
-void fsm_actionSignUp(stateMachine_t* pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExit);
-// 复位状态机：将状态机的运行状态复位到默认状态
-void fsm_reset(stateMachine_t* pSm);
-// 运行一次指定的状态机
-void fsm_run(stateMachine_t* pSm);
+// 如果在 C51 单片机上，内存模式使用 LargeMode： data in xData，则以上定义做如下调整（指针参数加xdata说明）
+void fsm_init(stateMachine_t xdata* pSm, uint8_t stateIDs_count, uint8_t stateID_default);
+void fsm_eventSignUp(stateMachine_t xdata* pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing);
+void fsm_actionSignUp(stateMachine_t xdata* pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExit);
+void fsm_reset(stateMachine_t xdata* pSm);
+void fsm_run(stateMachine_t xdata* pSm);
 #endif
