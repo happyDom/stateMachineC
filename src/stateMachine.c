@@ -56,14 +56,14 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
     pSm->warningOn = warningFunc;
 
     dyMM = DynMemGet((sizeof(uint32_t) * pSm->stateIDs_Count));
-    if (IS_pSafe(dyMM)) {
-        pSm->enterCounterOf = (uint32_t*)dyMM;
-    } else {  // 如果内存分配不成功，则死在这里
+    if (IS_NULL(dyMM)) {  // 如果内存分配不成功，则死在这里
         if (IS_pSafe(pSm->warningOn)) {
             pSm->warningOn();
         }
         while (1) {
         }
+    } else {
+        pSm->enterCounterOf = (uint32_t*)dyMM;
     }
 
     pSm->latched = false;
@@ -72,14 +72,14 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 #endif
 
     dyMM = DynMemGet(sizeof(smUnit_t) * pSm->stateIDs_Count);
-    if (IS_pSafe(dyMM)) {
-        pSm->pSMChain = (smUnit_t*)dyMM;
-    } else {  // 如果内存分配不成功，则死在这里
+    if (IS_NULL(dyMM)) {  // 如果内存分配不成功，则死在这里
         if (IS_pSafe(pSm->warningOn)) {
             pSm->warningOn();
         }
         while (1) {
         }
+    } else {
+        pSm->pSMChain = (smUnit_t*)dyMM;
     }
 
     // 遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
@@ -157,7 +157,7 @@ void fsm_reset(stateMachine_t* pSm) {
 
 /*
 向指定的状态机注册事件,将指定的事件注册到对应的状态下,但需要注意:
-事件的执行由先向后,所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
+事件的执行由前向后，满足后立即跳转，不再判定后面的事件；所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
 void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing) {
     struct stateMachine_event_s* stEvent = NULL;
@@ -173,7 +173,7 @@ void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, sm
         }
     }
 
-    // 如果要注册的stateID不合理，则退出
+    // 如果要注册的stateID不合理
     if (pSm->stateIDs_Count <= stateID) {
         if (IS_pSafe(pSm->warningOn)) {
             pSm->warningOn();
@@ -182,7 +182,7 @@ void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, sm
         }
     }
 
-    // 如果要注册的nextState不合理，则退出
+    // 如果要注册的nextState不合理
     if (pSm->stateIDs_Count <= nextState) {
         if (IS_pSafe(pSm->warningOn)) {
             pSm->warningOn();
@@ -191,8 +191,8 @@ void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, sm
         }
     }
 
-    // 如果跳转事件为空，则退出
-    if (!IS_pSafe(pEventForGoing)) {
+    // 如果跳转事件为空
+    if (IS_NULL(pEventForGoing)) {
         if (IS_pSafe(pSm->warningOn)) {
             pSm->warningOn();
         }
@@ -201,7 +201,7 @@ void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, sm
     }
 
     dyMM = DynMemGet(sizeof(struct stateMachine_event_s));
-    if (!IS_pSafe(dyMM)) {
+    if (IS_NULL(dyMM)) {
         if (IS_pSafe(pSm->warningOn)) {
             pSm->warningOn();
         }
@@ -241,7 +241,7 @@ void fsm_actionSignUp(stateMachine_t* pSm, uint8_t stateID, smActionFunc_t pEnte
         }
     }
 
-    // 如果要注册的stateID不合理，则退出
+    // 如果要注册的stateID不合理
     if (pSm->stateIDs_Count <= stateID) {
         if (IS_pSafe(pSm->warningOn)) {
             pSm->warningOn();
@@ -263,7 +263,7 @@ void fsm_run(stateMachine_t* pSm) {
     smUnit_t* st = NULL;
     smUnit_t* stNew = NULL;
 
-    // 如果状态机或者状态链没有初始化, 无法注册动作,直接返回
+    // 如果状态机或者状态链没有初始化, 无法注册动作
     if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain) || IS_NULL(pSm->enterCounterOf) || pSm->stateID >= pSm->stateIDs_Count) {
         if (IS_pSafe(pSm) && IS_pSafe(pSm->warningOn)) {
             pSm->warningOn();
@@ -285,6 +285,7 @@ void fsm_run(stateMachine_t* pSm) {
     st->roundCounter++;
 
     // 如果是第一次轮询状态机，则需要先执行一次Enter动作 和Do动作
+    // 注意：在 fsm_reset/fsm_init 时，会把 st->stateID_l 置成 pSm->stateIDs_Count，这是判断是否首次进入的依据
     if (pSm->stateIDs_Count == st->stateID_l) {
         pSm->roundCounter = 0;  // 复位状态机计数
         st->roundCounter = 0;   // 复位状态计数
@@ -337,7 +338,7 @@ void fsm_run(stateMachine_t* pSm) {
                 st->actions.pExitAction(st);
             }
 
-            // 更新当前状态的出现次数
+            // 更新当前状态的进入次数
             pSm->enterCounterOf[stNew->stateID]++;
 
             stNew->roundCounter = 0;  // 复位新状态计数器

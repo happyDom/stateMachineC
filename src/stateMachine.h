@@ -1,8 +1,8 @@
 #ifndef C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #define C0FD9D79_317D_44BD_BF7F_E51B5C4F850C
 #include <stdbool.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /*
  * 你需要创建并完成一个 userSMCfg.h 文档，在该文档中根据需要，应完成以下内容的定义
@@ -95,6 +95,11 @@ typedef struct {
         bool b;
         int8_t i8;
         uint8_t u8;
+    } d8;
+    union {
+        bool b;
+        int8_t i8;
+        uint8_t u8;
         int16_t i16;
         uint16_t u16;
 
@@ -153,6 +158,11 @@ typedef struct {
 } stBuffer_t;
 #elif defined(ST_BUFFER_PART)
 typedef struct {
+    union {
+        bool b;
+        int8_t i8;
+        uint8_t u8;
+    } d8;
     union {
         bool b;
         int8_t i8;
