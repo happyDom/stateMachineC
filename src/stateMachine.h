@@ -235,7 +235,7 @@ struct stateMachineUnit_s {
     uint8_t stateID;                          // 当前状态循环的状态
     struct stateMachine_actionMap_s actions;  // 在本状态时需要执行的动作
     struct stateMachine_event_s* events;      // 在本状态时，需要进行关注的事件，这是事件链表的表头地址
-    uint32_t roundCounter;                    // 这个计数器显示了在本状态期间，状态机轮询的次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
+    uint32_t roundCounter;                    // 这个计数器显示了在本状态期间，状态机已经完成的轮询次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
     stateMachine_t* pSm;                      // 状态机的指针，这使得状态单元可以使用状态机中的信息
 
 // 一个通用的buffer，用于存放与实际实用场景相关的数据
@@ -253,7 +253,7 @@ struct stateMachine_s {
     uint8_t stateID_default;                   // 状态机的默认状态
     uint8_t stateIDs_Count;                    // 状态机的总状态数
     uint32_t* enterCounterOf;                  // 一个数组，用于记录状态机中每一个状态出现的次数，在对应状态进入时进行计数
-    uint32_t roundCounter;                     // 记录状态机的轮询次数
+    uint32_t roundCounter;                     // 记录状态机的已经完成的轮询次数
 
 // 定义一个buffer，用于存放与实际实用场景相关的数据
 #if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY)
