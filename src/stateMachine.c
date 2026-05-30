@@ -222,17 +222,14 @@ void fsm_run(stateMachine_t xdata* pSm) {
         }
     }
 
-    pSm->roundCounter++;
-    if (pSm->latched) {  // 如果状态机被锁，则不运行任何实际逻辑
+    if (pSm->latched) {       // 如果状态机被锁，则不运行任何实际逻辑
+        pSm->roundCounter++;  // 直接更新计数值
         return;
     }
 
     // 获取当前的状态单元
     st = &pSm->pSMChain[pSm->stateID];
     stNew = NULL;
-
-    // 更新当前状态的计数值
-    st->roundCounter++;
 
     // 如果是第一次轮询状态机，则需要先执行一次Enter动作 和Do动作
     // 注意：在 fsm_reset/fsm_init 时，会把 st->stateID_l 置成 pSm->stateIDs_Count，这是判断是否首次进入的依据
@@ -241,18 +238,21 @@ void fsm_run(stateMachine_t xdata* pSm) {
         st->roundCounter = 0;   // 复位状态计数
         st->stateID_l = st->stateID;
 
-        if (IS_pSafe(pSm->actionOnChangeBeforeEnter)) {
+        if (IS_pSafe(pSm->actionOnChangeBeforeEnter)) {  // 如果注册有状态切换事件，则执行之
             pSm->actionOnChangeBeforeEnter(st);
-        }  // 如果注册有状态切换事件，则执行之
-        if (IS_pSafe(st->actions.pEnterAction)) {
+        }
+        if (IS_pSafe(st->actions.pEnterAction)) {  // 如果有enter事件，则执行之
             st->actions.pEnterAction(st);
-        }  // 如果有enter事件，则执行之
-        if (IS_pSafe(st->actions.pDoAction)) {
+        }
+        if (IS_pSafe(st->actions.pDoAction)) {  // 如果有do事件，则执行之
             st->actions.pDoAction(st);
-        }  // 如果有do事件，则执行之
-        if (IS_pSafe(pSm->actionAfterDo)) {
+        }
+        if (IS_pSafe(pSm->actionAfterDo)) {  // 如果有actionAfterDo事件，则执行之
             pSm->actionAfterDo(st);
-        }  // 如果有actionAfterDo事件，则执行之
+        }
+
+        // 本轮完成，更新计数值
+        st->roundCounter++;
     } else {
         // 如果这个状态有定义事件，并且没有被锁，则检测跳转事件是否发生
         if (IS_pSafe(st->events) && !st->latched) {
@@ -276,38 +276,44 @@ void fsm_run(stateMachine_t xdata* pSm) {
 
         // 如果进入了新的状态
         if (IS_pSafe(stNew)) {
-            // 将新状态的 stateID_l 值更新为当前状态的 stateID 值
-            stNew->stateID_l = st->stateID;
+            stNew->stateID_l = st->stateID;  // 将新状态的 stateID_l 值更新为当前状态的 stateID 值
 
-            // 更新状态ID
-            pSm->stateID = stNew->stateID;
+            pSm->stateID = stNew->stateID;  // 更新状态ID
 
-            // 执行当前状态的 exit 动作
-            if (IS_pSafe(st->actions.pExitAction)) {
+            if (IS_pSafe(st->actions.pExitAction)) {  // 执行当前状态的 exit 动作
                 st->actions.pExitAction(st);
             }
 
-            stNew->roundCounter = 0;  // 复位新状态计数器
-            if (IS_pSafe(pSm->actionOnChangeBeforeEnter)) {
+            stNew->roundCounter = 0;                         // 复位新状态计数器
+            if (IS_pSafe(pSm->actionOnChangeBeforeEnter)) {  // 如果注册有状态切换事件，则执行之
                 pSm->actionOnChangeBeforeEnter(stNew);
-            }  // 如果注册有状态切换事件，则执行之
-            if (IS_pSafe(stNew->actions.pEnterAction)) {
+            }
+            if (IS_pSafe(stNew->actions.pEnterAction)) {  // 执行新状态的 enter 动作
                 stNew->actions.pEnterAction(stNew);
-            }  // 执行新状态的 enter 动作
-            if (IS_pSafe(stNew->actions.pDoAction)) {
+            }
+            if (IS_pSafe(stNew->actions.pDoAction)) {  // 执行新状态的 do 动作
                 stNew->actions.pDoAction(stNew);
-            }  // 执行新状态的 do 动作
-            if (IS_pSafe(pSm->actionAfterDo)) {
+            }
+            if (IS_pSafe(pSm->actionAfterDo)) {  // 如果有actionAfterDo事件，则执行之
                 pSm->actionAfterDo(stNew);
-            }  // 如果有actionAfterDo事件，则执行之
+            }
+
+            // 本轮完成，更新计数值
+            stNew->roundCounter++;
         } else {  // 如果继续留在当前状态，则执行当前状态的逗留活动
-            // 执行本状态的逗留活动
-            if (IS_pSafe(st->actions.pDoAction)) {
+
+            if (IS_pSafe(st->actions.pDoAction)) {  // 执行本状态的逗留活动
                 st->actions.pDoAction(st);
             }
-            if (IS_pSafe(pSm->actionAfterDo)) {
+            if (IS_pSafe(pSm->actionAfterDo)) {  // 如果有actionAfterDo事件，则执行之
                 pSm->actionAfterDo(st);
-            }  // 如果有actionAfterDo事件，则执行之
+            }
+
+            // 本轮完成，更新计数值
+            st->roundCounter++;
         }
     }
+
+    // 本轮完成，更新计数值
+    pSm->roundCounter++;
 }
