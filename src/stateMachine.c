@@ -17,7 +17,7 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
     // 遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
     for (int i = 0; i < pSm->stateIDs_Count; i++) {
         pSm->pSMChain[i].stateID = i;
-        pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;  // 默认的前一状态为 stateID_end
+        pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;  // 默认的前一状态为 stateIDs_Count
         pSm->pSMChain[i].latched = false;
         pSm->pSMChain[i].actions.pDoAction = NULL;
         pSm->pSMChain[i].actions.pEnterAction = NULL;
@@ -55,12 +55,12 @@ void fsm_reset(stateMachine_t* pSm) {
         // 复位状态机
         pSm->roundCounter = 0;  // 复位状态机的轮询次数
         pSm->stateID = pSm->stateID_default;
-        pSm->pSMChain[pSm->stateID_default].stateID_l = pSm->stateIDs_Count;
-        pSm->pSMChain[pSm->stateID_default].latched = false;  // 复位状态锁
 
         // 复位各状态出现的次数值
         for (int i = 0; i < pSm->stateIDs_Count; i++) {
             pSm->enterCounterOf[i] = 0;
+            pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;  // 默认的前一状态为 stateIDs_Count
+            pSm->pSMChain[i].latched = false;
         }
     }
 }
@@ -137,7 +137,7 @@ void fsm_run(stateMachine_t* pSm) {
     stateMachineUnit_t* stNew = NULL;
 
     // 如果是第一次轮询状态机，则需要先执行一次Enter动作 和Do动作
-    if (0 == pSm->roundCounter) {
+    if (pSm->stateIDs_Count == st->roundCounter) {
         st->roundCounter = 0;  // 复位状态计数
         st->stateID_l = st->stateID;
         if (IS_pSafe(pSm->actionOnChangeBeforeEnter)) {  // 如果注册有状态切换事件，则执行之
