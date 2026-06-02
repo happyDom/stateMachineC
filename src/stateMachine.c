@@ -208,7 +208,7 @@ void fsm_run(stateMachine_t* pSm) {
             }
 
             // 状态结束，更新计数器
-            st->roundCounter++;
+            stNew->roundCounter++;
         } else {  // 如果继续留在当前状态，则执行当前状态的逗留活动
 
             if (IS_pSafe(st->actions.pDoAction)) {  // 执行本状态的逗留活动
