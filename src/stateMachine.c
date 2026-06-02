@@ -222,4 +222,7 @@ void fsm_run(stateMachine_t* pSm) {
             st->roundCounter++;
         }
     }
+
+    // 状态结束，更新计数器
+    pSm->roundCounter++;
 }
