@@ -141,6 +141,8 @@ void fsm_run(stateMachine_t* pSm) {
     if (pSm->stateIDs_Count == st->stateID_l) {
         st->roundCounter = 0;  // 复位状态计数
         st->stateID_l = st->stateID;
+        st->pSm->enterCounterOf[st->stateID]++;  // 更新当前状态的出现次数
+
         if (IS_pSafe(pSm->actionOnChangeBeforeEnter)) {  // 如果注册有状态切换事件，则执行之
             pSm->actionOnChangeBeforeEnter(st);
         }
