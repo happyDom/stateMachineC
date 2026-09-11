@@ -13,12 +13,15 @@ static uint8_t DMEMORY[DMEM_BUFFER_SIZE] = {0};  // 用于存放状态机使用�
 
 // 管理DMEMORY资源的申请事务
 static void* DynMemGet(size_t byteSize) {
+    size_t alignedUsed;
+    void* pMem;
+
     if (0 == byteSize) {
         return NULL;
     }
 
     // 进行字节对齐
-    size_t alignedUsed = DMEM_ALIGN_UP(bufferUsed);
+    alignedUsed = DMEM_ALIGN_UP(bufferUsed);
 
     // 要申请的内存块大小，不能大于剩余的buffer大小
     if (byteSize > DMEM_BUFFER_SIZE - alignedUsed) {
@@ -26,7 +29,7 @@ static void* DynMemGet(size_t byteSize) {
     }
 
     // 返回对齐后的buffer地址，并更新使用量
-    void* pMem = &DMEMORY[alignedUsed];
+    pMem = &DMEMORY[alignedUsed];
     bufferUsed = alignedUsed + byteSize;
 
     return pMem;
@@ -36,6 +39,7 @@ static void* DynMemGet(size_t byteSize) {
 初始化状态机
 */
 void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void)) {
+    uint8_t i;
     void* dyMM;  // 用于临时存放申请到的内存块地址
 
     if (IS_NULL(pSm) || stateID_default >= stateIDs_count || stateIDs_count == 0) {
@@ -83,7 +87,7 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
     }
 
     // 遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
-    for (uint8_t i = 0; i < pSm->stateIDs_Count; i++) {
+    for (i = 0; i < pSm->stateIDs_Count; i++) {
         pSm->pSMChain[i].stateID = i;
         pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;  // 默认的前一状态为 stateID_end
         pSm->pSMChain[i].latched = false;
@@ -108,6 +112,9 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 将指定的状态机，复位到默认的状态
 */
 void fsm_reset(stateMachine_t* pSm) {
+    uint8_t i;
+    smUnit_t* st;
+
     if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain) || IS_NULL(pSm->enterCounterOf)) {
         if (IS_pSafe(pSm) && IS_pSafe(pSm->warningOn)) {
             pSm->warningOn();
@@ -124,7 +131,7 @@ void fsm_reset(stateMachine_t* pSm) {
         }
     }
 
-    smUnit_t* st = &pSm->pSMChain[pSm->stateID];
+    st = &pSm->pSMChain[pSm->stateID];
     st->latched = false;  // 强行解除当前状态的状态锁
     if (IS_pSafe(st->actions.pExitAction)) {
         st->actions.pExitAction(st);
@@ -142,7 +149,7 @@ void fsm_reset(stateMachine_t* pSm) {
 #endif
 
     // 复位各状态出现的次数值
-    for (uint8_t i = 0; i < pSm->stateIDs_Count; i++) {
+    for (i = 0; i < pSm->stateIDs_Count; i++) {
         pSm->enterCounterOf[i] = 0;
         pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;
         pSm->pSMChain[i].latched = false;
