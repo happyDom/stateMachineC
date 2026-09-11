@@ -55,8 +55,8 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
         pSm->roundCounter = 0;
     }
 
-    pSm->actionOnChangeBeforeEnter = NULL;
-    pSm->actionAfterDo = NULL;
+    pSm->actionOnChangeBeforeEnter = 0;
+    pSm->actionAfterDo = 0;
     pSm->warningOn = warningFunc;
 
     dyMM = DynMemGet((sizeof(uint32_t) * pSm->stateIDs_Count));
@@ -91,10 +91,10 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
         pSm->pSMChain[i].stateID = i;
         pSm->pSMChain[i].stateID_l = pSm->stateIDs_Count;  // 默认的前一状态为 stateID_end
         pSm->pSMChain[i].latched = false;
-        pSm->pSMChain[i].actions.pDoAction = NULL;
-        pSm->pSMChain[i].actions.pEnterAction = NULL;
-        pSm->pSMChain[i].actions.pExitAction = NULL;
-        pSm->pSMChain[i].events = NULL;
+        pSm->pSMChain[i].actions.pDoAction = 0;
+        pSm->pSMChain[i].actions.pEnterAction = 0;
+        pSm->pSMChain[i].actions.pExitAction = 0;
+        pSm->pSMChain[i].events = 0;
         pSm->pSMChain[i].pSm = pSm;  // 登记状态机的指针
 #if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART)
         pSm->pSMChain[i].buffer.ptr = NULL;  // 初始化各状态的buffer.ptr指针为NULL

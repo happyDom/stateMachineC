@@ -37,11 +37,11 @@ stateMachine_t myFSM = {0};
 #include "userSMCfg.h"
 
 #ifndef NULL
-#define NULL ((void*)0)
+#define NULL ((void *) 0)
 #endif
 
-#define IS_NULL(p) (NULL == (p))
-#define IS_pSafe(p) (NULL != (p))
+#define IS_NULL(p) ((0) == (p))
+#define IS_pSafe(p) ((0) != (p))
 
 #ifndef DMEM_BUFFER_SIZE
 #error "please #define DMEM_BUFFER_SIZE //in userSMCfg.h"
