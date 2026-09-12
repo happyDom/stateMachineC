@@ -38,7 +38,7 @@ static void* DynMemGet(size_t byteSize) {
 /*
 初始化状态机
 */
-void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void)) {
+void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void), smActionFunc_t actionAfterDo) {
     uint8_t i;
     void* dyMM;  // 用于临时存放申请到的内存块地址
 
@@ -55,8 +55,7 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
         pSm->roundCounter = 0;
     }
 
-    pSm->actionOnChangeBeforeEnter = 0;
-    pSm->actionAfterDo = 0;
+    pSm->actionAfterDo = actionAfterDo;
     pSm->warningOn = warningFunc;
 
     dyMM = DynMemGet((sizeof(uint32_t) * pSm->stateIDs_Count));
@@ -296,9 +295,6 @@ void fsm_run(stateMachine_t* pSm) {
         st->stateID_l = st->stateID;
         pSm->enterCounterOf[st->stateID]++;
 
-        if (IS_pSafe(pSm->actionOnChangeBeforeEnter)) {
-            pSm->actionOnChangeBeforeEnter(st);
-        }  // 如果注册有状态切换事件，则执行之
         if (IS_pSafe(st->actions.pEnterAction)) {
             st->actions.pEnterAction(st);
         }  // 如果有enter事件，则执行之
@@ -345,9 +341,6 @@ void fsm_run(stateMachine_t* pSm) {
             pSm->enterCounterOf[stNew->stateID]++;  // 更新当前状态的进入次数
 
             stNew->roundCounter = 0;                         // 复位新状态计数器
-            if (IS_pSafe(pSm->actionOnChangeBeforeEnter)) {  // 如果注册有状态切换事件，则执行之
-                pSm->actionOnChangeBeforeEnter(stNew);
-            }
             if (IS_pSafe(stNew->actions.pEnterAction)) {  // 执行新状态的 enter 动作
                 stNew->actions.pEnterAction(stNew);
             }

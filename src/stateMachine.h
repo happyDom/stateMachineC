@@ -247,7 +247,6 @@ struct stateMachineUnit_s {
 struct stateMachine_s {
     bool latched;                              // 状态机锁，为真时，状态机不运行任何状态的动作，不检测任何事件
     smUnit_t* pSMChain;                        // 存放状态单元的数组空间的地址
-    smActionFunc_t actionOnChangeBeforeEnter;  // 状态切换前要做的动作，参数是即将要切换到的目标状态实例
     smActionFunc_t actionAfterDo;              // 在每个do事件后执行的动作
     uint8_t stateID;                           // 标记当前状态机的状态
     uint8_t stateID_default;                   // 状态机的默认状态
@@ -265,7 +264,7 @@ struct stateMachine_s {
 };
 
 // 初始化状态表
-void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void));
+void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void), smActionFunc_t actionAfterDo);
 // 注册跳转事件/条件
 void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing);
 // 注册行为动作
