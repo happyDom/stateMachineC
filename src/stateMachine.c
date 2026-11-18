@@ -262,13 +262,12 @@ void fsm_actionSignUp(stateMachine_t* pSm, uint8_t stateID, smActionFunc_t pEnte
 }
 
 /* =====================================================================
- * 【overlay 提示】本模块的局部变量都是“可覆盖(overlay)”的。
- * fsm_run() 通过函数指针调用 pDo / pEnter / pExit / pEventForGoing，链接器
- * 看不到这条调用边，可能把 fsm_run() 的 p / st / stNew 与回调函数及其调用
- * 链的局部变量分到同一地址 → 运行时互相覆盖。典型症状：roundCounter 不再
- * 增长、出现随机值、回调返回后 st 指针变味、按周期触发的动作或显示失效。
- * 结论：现象诡异，但代码逻辑无明显异常时，先查 map 的 overlay 分配，
- * 详细机制与排查步骤见 stateMachine.h 顶部注释。
+ * 【overlay 警示】本函数通过函数指针调用 pDo / pEnter / pExit /
+ * pEventForGoing，链接器看不见这些调用边，可能把这里的 p / st / stNew
+ * 与回调链上任意函数的局部变量分到同一地址，运行时互相覆盖。
+ * 典型症状：roundCounter 不再增长、回调返回后 st 指针变味、周期动作或
+ * 周期显示失效 —— 而业务代码看起来毫无破绽。
+ * 一句话判据、三步排查、两种处理方式见 stateMachine.h 顶部注释。
  * ===================================================================== */
 /*
 运行指定的状态机
