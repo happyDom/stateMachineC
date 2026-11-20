@@ -125,10 +125,10 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
         // 注册状态动作
         // 为每一个状态指定进入事件，逗留事件和退出事件
         // 如果你的某些状态不需要全部的事件，则将不需要对应事件的位置使用NULL做入参即可
-        demoSM.actionSignUp(&demoSM, a, actionEntry, NULL, actionExit);
-        demoSM.actionSignUp(&demoSM, b, NULL, actionDo, actionExit);
-        demoSM.actionSignUp(&demoSM, c, actionEntry, actionDo, NULL);
-        demoSM.actionSignUp(&demoSM, d, NULL, actionDo, NULL);
+        demoSM.actionSignUp(&demoSM, a, actionEntry, 0, actionExit);
+        demoSM.actionSignUp(&demoSM, b, 0, actionDo, actionExit);
+        demoSM.actionSignUp(&demoSM, c, actionEntry, actionDo, 0);
+        demoSM.actionSignUp(&demoSM, d, 0, actionDo, 0);
         
         // 注册状态事件
         // 为每个状态跳转路径，指定对应的事件

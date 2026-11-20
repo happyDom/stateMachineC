@@ -33,11 +33,11 @@ smEventResult_t pressC(smUnit_t* pSt) { return 'c' == inputKey; };
 smEventResult_t pressD(smUnit_t* pSt) { return 'd' == inputKey; };
 
 void smDemoBuild() {
-    fsm_init(&demoSM, stateID_count, 0, NULL);
+    fsm_init(&demoSM, stateID_count, 0, 0);
 
     // 注册状态动作
     // 为每一个状态指定进入事件，逗留事件和退出事件
-    // 如果你的某些状态不需要全部的事件，则将不需要对应事件的位置使用NULL做入参即可
+    // 如果你的某些状态不需要全部的事件，则将不需要对应事件的位置传 0 即可
     fsm_actionSignUp(&demoSM, a, actionEntry, actionDo, actionExit);
     fsm_actionSignUp(&demoSM, b, actionEntry, actionDo, actionExit);
     fsm_actionSignUp(&demoSM, c, actionEntry, actionDo, actionExit);

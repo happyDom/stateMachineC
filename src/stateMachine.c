@@ -17,7 +17,7 @@ static void* DynMemGet(size_t byteSize) {
     void* pMem;
 
     if (0 == byteSize) {
-        return NULL;
+        return 0;
     }
 
     // 进行字节对齐
@@ -25,7 +25,7 @@ static void* DynMemGet(size_t byteSize) {
 
     // 要申请的内存块大小，不能大于剩余的buffer大小
     if (byteSize > DMEM_BUFFER_SIZE - alignedUsed) {
-        return NULL;
+        return 0;
     }
 
     // 返回对齐后的buffer地址，并更新使用量
@@ -71,7 +71,7 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 
     pSm->latched = false;
 #if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART)
-    pSm->buffer.ptr = NULL;  // 初始化状态机的buffer.ptr指针为NULL
+    pSm->buffer.ptr = 0;     // 初始化状态机的 buffer.ptr 指针
 #endif
 
     dyMM = DynMemGet(sizeof(smUnit_t) * pSm->stateIDs_Count);
@@ -96,7 +96,7 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
         pSm->pSMChain[i].events = 0;
         pSm->pSMChain[i].pSm = pSm;  // 登记状态机的指针
 #if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART)
-        pSm->pSMChain[i].buffer.ptr = NULL;  // 初始化各状态的buffer.ptr指针为NULL
+        pSm->pSMChain[i].buffer.ptr = 0;     // 初始化各状态的 buffer.ptr 指针
 #endif
 
         // 初始化内部变量
@@ -166,8 +166,8 @@ void fsm_reset(stateMachine_t* pSm) {
 事件的执行由前向后，满足后立即跳转，不再判定后面的事件；所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
 void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing) {
-    struct stateMachine_event_s* stEvent = NULL;
-    struct stateMachine_event_s* p = NULL;
+    struct stateMachine_event_s* stEvent = 0;
+    struct stateMachine_event_s* p = 0;
     void* dyMM;  // 用于临时存放申请到的内存块地址
 
     // 如果 __pStateMachine 没有初始化, 无法注册事件
@@ -219,12 +219,12 @@ void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, sm
         pSm->pSMChain[stateID].events = (struct stateMachine_event_s*)dyMM;
         pSm->pSMChain[stateID].events->pEventForGoing = pEventForGoing;
         pSm->pSMChain[stateID].events->nextState = nextState;
-        pSm->pSMChain[stateID].events->nextEvent = NULL;
+        pSm->pSMChain[stateID].events->nextEvent = 0;
     } else {
         p = (struct stateMachine_event_s*)dyMM;
         p->pEventForGoing = pEventForGoing;
         p->nextState = nextState;
-        p->nextEvent = NULL;
+        p->nextEvent = 0;
         for (stEvent = pSm->pSMChain[stateID].events;; stEvent = stEvent->nextEvent) {
             if (IS_NULL(stEvent->nextEvent)) {
                 stEvent->nextEvent = p;
@@ -273,9 +273,9 @@ void fsm_actionSignUp(stateMachine_t* pSm, uint8_t stateID, smActionFunc_t pEnte
 运行指定的状态机
 */
 void fsm_run(stateMachine_t* pSm) {
-    struct stateMachine_event_s* p = NULL;
-    smUnit_t* st = NULL;
-    smUnit_t* stNew = NULL;
+    struct stateMachine_event_s* p = 0;
+    smUnit_t* st = 0;
+    smUnit_t* stNew = 0;
 
     // 如果状态机或者状态链没有初始化, 无法注册动作
     if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain) || IS_NULL(pSm->enterCounterOf) || pSm->stateID >= pSm->stateIDs_Count) {
@@ -293,7 +293,7 @@ void fsm_run(stateMachine_t* pSm) {
 
     // 获取当前的状态单元
     st = &pSm->pSMChain[pSm->stateID];
-    stNew = NULL;
+    stNew = 0;
 
     // 如果是第一次轮询状态机，则需要先执行一次Enter动作 和Do动作
     // 注意：在 fsm_reset/fsm_init 时，会把 st->stateID_l 置成 pSm->stateIDs_Count，这是判断是否首次进入的依据
