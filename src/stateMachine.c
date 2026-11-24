@@ -12,9 +12,17 @@
  * 这里会预先在静态存储区上申请一块指定大小的内存空间，用于满足后续状态机的内存需求
  * 注意：bufferUsed 与 DMEMORY 的声明顺序不要调整 —— 用来避免 DMEMORY 落到 X:0x0000，
  *       否则后文用 0 判空时，会把成功申请到的第一块内存误判为申请失败。
+ *
+ * 注意：bufferUsed 必须留在 edata（不挂 SM_MEM）。
+ *       xdata 变量在启动阶段不会被初始化（C251 没有 xdata 的启动初始化代码），
+ *       写成 "static size_t SM_MEM bufferUsed = 0" 时那个 =0 会被静默丢弃，
+ *       计数器初值是上电时的随机值；DynMemGet 拿它算剩余空间，直接判成"池已满"，
+ *       fsm_init 随后走 while(1) 死等 —— 表现就是刷完黑屏、毫无反应。
+ *       edata 由启动代码统一清零，这个计数器本来就该待在这里。
+ * DMEMORY 不再写 "= {0}"：对 xdata 而言这句话同样不生效，留着只会误导；池内容都是先写后读。
  */
-static size_t SM_MEM bufferUsed = 0;                    // 已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
-static uint8_t SM_MEM DMEMORY[DMEM_BUFFER_SIZE] = {0};  // 用于存放状态机使用的内存
+static size_t bufferUsed = 0;                    // 已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
+static uint8_t SM_MEM DMEMORY[DMEM_BUFFER_SIZE]; // 用于存放状态机使用的内存
 
 // 管理DMEMORY资源的申请事务
 static uint8_t SM_MEM* DynMemGet(size_t byteSize) {

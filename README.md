@@ -42,7 +42,9 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
 另外两点（都是踩过的坑）：
 
 - 对象落在 xdata 时**不要写初始化器**（`= {0}` 这类）：C251 不为 xdata 生成启动初始化代码，初始化器会被静默丢弃；`fsm_init` 本来就会把全部字段赋一遍，直接 `stateMachine_t SM_MEM myFSM;` 就行。
+- 同理，库内那个统计池已用字节数的计数器刻意留在 `edata`（不挂 `SM_MEM`）：放到 xdata 时它的 `= 0` 同样会被丢弃，初值是上电随机值，`DynMemGet` 会直接判“池已满”，`fsm_init` 随后 `while(1)` 死等 —— 现象就是刷完黑屏、毫无反应。
 - 不要试图把存储类折进 typedef（`typedef struct X SM_MEM T;`）来省掉 `SM_MEM`：C251 对这种写法处理不可靠，实测实例可能静默落回 edata 且不报任何告警。
+
 ## 使用说明
 
 - 👉先在项目里照 `cfg/userSMCfg.h.sample` 建 `userSMCfg.h`，并把 `src/` 加入头文件搜索路径
