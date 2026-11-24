@@ -31,10 +31,35 @@
  * 3、定义变量 DMEM_BUFFER_SIZE 用于管理状态机使用的内存，在项目定形后，通过观察bufferUsed的值，适当的减小该变量的值
 #define DMEM_BUFFER_SIZE          512
 
- * 提示： 声明状态机对象时，可以直接将对象初始化为0，例如：
-stateMachine_t myFSM = {0};
+ * 提示： 声明状态机对象时不要写初值。若 SM_MEM 指定为 xdata，C251 不为 xdata 生成启动
+ *       初始化代码，初始化器会被静默丢弃；而 fsm_init 本来就会把全部字段赋一遍，例如：
+stateMachine_t myFSM;
 */
 #include "userSMCfg.h"
+
+/* 4、可选：SM_MEM 指定状态机对象、状态单元、事件节点与内存池的存放区
+ * C51 的内存模型为 small/tiny 时 data 区很小，若要让整套状态机脱离 edata，
+ * 可在 userSMCfg.h 里定义：
+ *      #define SM_MEM      xdata
+ * 不定义时表示不限定存储区（由编译器默认处理），C251 等平台留空即可。
+ *
+ * 应用侧要跟着做两件事（只有这两件）：
+ *   1) 声明对象时把 SM_MEM 写上：stateMachine_t SM_MEM myFSM;
+ *      漏写不会编译失败，但会立刻报一串 C150 'edata' pointer converted to 'xdata' pointer，
+ *      照着告警把 SM_MEM 补上即可；
+ *   2) 回调参数统一用 smUnitPtr_t，不要写 smUnit_t*（后者是 edata 指针，
+ *      与库里带 SM_MEM 的回调原型对不上，会报 C98/C91）。
+ * 库内部的指针成员与局部指针都通过 smUnitPtr_t / smPtr_t / smEventPtr_t 表达存储区，
+ * 切换 SM_MEM 时库代码一行都不用改。
+ *
+ * 为什么不把存储类折进 typedef（typedef struct X SM_MEM T;）让应用侧彻底不用写：
+ * C251 对"typedef 挂存储类"的处理不可靠 —— 实测在同一编译单元里放两个这种 typedef，
+ * 只有一个生效，另一个静默失效，实例仍落回 edata 且不报任何告警。宁可让使用者显式写
+ * SM_MEM（写漏了有响亮的告警兜底），也不用这种静默失效的写法。
+ */
+#ifndef SM_MEM
+#define SM_MEM
+#endif
 
 /* =====================================================================
  * 【踩坑警示：Keil C251 的 Data Overlay（数据覆盖）会踩掉本框架的局部变量】
@@ -265,8 +290,15 @@ struct stateMachine_event_s;
 typedef struct stateMachineUnit_s smUnit_t;
 typedef struct stateMachine_s stateMachine_t;
 
-typedef void (*smActionFunc_t)(smUnit_t*);
-typedef smEventResult_t (*smEventFunc_t)(smUnit_t*);
+/* 指向状态机内部对象的指针类型：存储区由 SM_MEM 统一决定，库内外都只用这三个名字。
+ * 注意：存储类不能折进结构体类型的 typedef —— C251 对此的处理不可靠（实测实例可能
+ *      静默落回 edata，且不报任何告警），所以对象的存储区必须在声明处显式给出。 */
+typedef smUnit_t SM_MEM* smUnitPtr_t;                     /* 指向状态单元 */
+typedef stateMachine_t SM_MEM* smPtr_t;                   /* 指向状态机对象 */
+typedef struct stateMachine_event_s SM_MEM* smEventPtr_t;   /* 指向事件节点 */
+
+typedef void (*smActionFunc_t)(smUnitPtr_t);
+typedef smEventResult_t (*smEventFunc_t)(smUnitPtr_t);
 
 struct stateMachine_actionMap_s {
     smActionFunc_t pEnterAction;
@@ -277,7 +309,7 @@ struct stateMachine_actionMap_s {
 struct stateMachine_event_s {
     smEventFunc_t pEventForGoing;
     uint8_t nextState;                       // 目标状态
-    struct stateMachine_event_s* nextEvent;  // 下一个事件
+    smEventPtr_t nextEvent;  // 下一个事件
 };  // 这是一个单向链表,用于登记多个事件
 
 struct stateMachineUnit_s {
@@ -285,9 +317,9 @@ struct stateMachineUnit_s {
     uint8_t stateID_l;                        // 状态机的前一个状态
     uint8_t stateID;                          // 当前状态循环的状态
     struct stateMachine_actionMap_s actions;  // 在本状态时需要执行的动作
-    struct stateMachine_event_s* events;      // 在本状态时，需要进行关注的事件，这是事件链表的表头地址
+    smEventPtr_t events;      // 在本状态时，需要进行关注的事件，这是事件链表的表头地址
     uint32_t roundCounter;                    // 这个计数器显示了在本状态期间，状态机已经完成的轮询次数，如果 1ms 轮询一次，支持最大 49.7 天时间的计数
-    stateMachine_t* pSm;                      // 状态机的指针，这使得状态单元可以使用状态机中的信息
+    smPtr_t pSm;                      // 状态机的指针，这使得状态单元可以使用状态机中的信息
 
 // 一个通用的buffer，用于存放与实际实用场景相关的数据
 #if defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
@@ -297,12 +329,12 @@ struct stateMachineUnit_s {
 
 struct stateMachine_s {
     bool latched;                              // 状态机锁，为真时，状态机不运行任何状态的动作，不检测任何事件
-    smUnit_t* pSMChain;                        // 存放状态单元的数组空间的地址
+    smUnitPtr_t pSMChain;                        // 存放状态单元的数组空间的地址
     smActionFunc_t actionAfterDo;              // 在每个do事件后执行的动作
     uint8_t stateID;                           // 标记当前状态机的状态
     uint8_t stateID_default;                   // 状态机的默认状态
     uint8_t stateIDs_Count;                    // 状态机的总状态数
-    uint32_t* enterCounterOf;                  // 一个数组，用于记录状态机中每一个状态出现的次数，在对应状态进入时进行计数
+    uint32_t SM_MEM* enterCounterOf;                  // 一个数组，用于记录状态机中每一个状态出现的次数，在对应状态进入时进行计数
     uint32_t roundCounter;                     // 记录状态机的已经完成的轮询次数
 
 // 定义一个buffer，用于存放与实际实用场景相关的数据
@@ -315,13 +347,13 @@ struct stateMachine_s {
 };
 
 // 初始化状态表
-void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void), smActionFunc_t actionAfterDo);
+void fsm_init(smPtr_t pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void), smActionFunc_t actionAfterDo);
 // 注册跳转事件/条件
-void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing);
+void fsm_eventSignUp(smPtr_t pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing);
 // 注册行为动作
-void fsm_actionSignUp(stateMachine_t* pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExit);
+void fsm_actionSignUp(smPtr_t pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExit);
 // 复位状态机：将状态机的运行状态复位到默认状态
-void fsm_reset(stateMachine_t* pSm);
+void fsm_reset(smPtr_t pSm);
 // 运行一次指定的状态机
-void fsm_run(stateMachine_t* pSm);
+void fsm_run(smPtr_t pSm);
 #endif

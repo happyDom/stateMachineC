@@ -2,19 +2,24 @@
 #if defined(SM_BUFFER_FULL) || defined(SM_BUFFER_PART) || defined(SM_BUFFER_TINY) || defined(ST_BUFFER_FULL) || defined(ST_BUFFER_PART) || defined(ST_BUFFER_TINY)
 #include "string.h"
 #endif
-#define DMEM_ALIGN_SIZE ((size_t)sizeof(void*))
+/* 池内单元按 4 字节对齐：池里既放 uint32_t 数组（enterCounterOf），也放 smUnit_t 等结构。
+ * 不要用 sizeof(void*) 做对齐粒度 —— C51 的通用指针是 3 字节、不是 2 的幂，
+ * (((size) + 3 - 1) & ~(3 - 1)) 算出来的掩码是错的。 */
+#define DMEM_ALIGN_SIZE ((size_t)4)
 #define DMEM_ALIGN_UP(size) (((size) + DMEM_ALIGN_SIZE - 1u) & ~(DMEM_ALIGN_SIZE - 1u))
 
 /**
  * 这里会预先在静态存储区上申请一块指定大小的内存空间，用于满足后续状态机的内存需求
+ * 注意：bufferUsed 与 DMEMORY 的声明顺序不要调整 —— 用来避免 DMEMORY 落到 X:0x0000，
+ *       否则后文用 0 判空时，会把成功申请到的第一块内存误判为申请失败。
  */
-static size_t bufferUsed = 0;                    // 已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
-static uint8_t DMEMORY[DMEM_BUFFER_SIZE] = {0};  // 用于存放状态机使用的内存
+static size_t SM_MEM bufferUsed = 0;                    // 已经被实用过的内存块数量, 项目定形后，可以将 DMEM_BUFFER_SIZE 的值设置为状态机准备完成后对应的 bufferUsed 的值
+static uint8_t SM_MEM DMEMORY[DMEM_BUFFER_SIZE] = {0};  // 用于存放状态机使用的内存
 
 // 管理DMEMORY资源的申请事务
-static void* DynMemGet(size_t byteSize) {
+static uint8_t SM_MEM* DynMemGet(size_t byteSize) {
     size_t alignedUsed;
-    void* pMem;
+    uint8_t SM_MEM* pMem;
 
     if (0 == byteSize) {
         return 0;
@@ -38,9 +43,9 @@ static void* DynMemGet(size_t byteSize) {
 /*
 初始化状态机
 */
-void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void), smActionFunc_t actionAfterDo) {
+void fsm_init(smPtr_t pSm, uint8_t stateIDs_count, uint8_t stateID_default, void (*warningFunc)(void), smActionFunc_t actionAfterDo) {
     uint8_t i;
-    void* dyMM;  // 用于临时存放申请到的内存块地址
+    uint8_t SM_MEM* dyMM;  // 用于临时存放申请到的内存块地址
 
     if (IS_NULL(pSm) || stateID_default >= stateIDs_count || stateIDs_count == 0) {
         if (IS_pSafe(warningFunc)) {
@@ -66,7 +71,7 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
         while (1) {
         }
     } else {
-        pSm->enterCounterOf = (uint32_t*)dyMM;
+        pSm->enterCounterOf = (uint32_t SM_MEM*)dyMM;
     }
 
     pSm->latched = false;
@@ -82,7 +87,7 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
         while (1) {
         }
     } else {
-        pSm->pSMChain = (smUnit_t*)dyMM;
+        pSm->pSMChain = (smUnit_t SM_MEM*)dyMM;
     }
 
     // 遍历数组,将其每一个状态的状态ID设置为数组的序号,这与 unsigned int 的定义是一致的
@@ -110,9 +115,9 @@ void fsm_init(stateMachine_t* pSm, uint8_t stateIDs_count, uint8_t stateID_defau
 /*
 将指定的状态机，复位到默认的状态
 */
-void fsm_reset(stateMachine_t* pSm) {
+void fsm_reset(smPtr_t pSm) {
     uint8_t i;
-    smUnit_t* st;
+    smUnitPtr_t st;
 
     if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain) || IS_NULL(pSm->enterCounterOf)) {
         if (IS_pSafe(pSm) && IS_pSafe(pSm->warningOn)) {
@@ -165,10 +170,10 @@ void fsm_reset(stateMachine_t* pSm) {
 向指定的状态机注册事件,将指定的事件注册到对应的状态下,但需要注意:
 事件的执行由前向后，满足后立即跳转，不再判定后面的事件；所以注册事件时,请将高优先级的事件先行注册,低优先级的事件后注册
 */
-void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing) {
-    struct stateMachine_event_s* stEvent = 0;
-    struct stateMachine_event_s* p = 0;
-    void* dyMM;  // 用于临时存放申请到的内存块地址
+void fsm_eventSignUp(smPtr_t pSm, uint8_t stateID, uint8_t nextState, smEventFunc_t pEventForGoing) {
+    smEventPtr_t stEvent = 0;
+    smEventPtr_t p = 0;
+    uint8_t SM_MEM* dyMM;  // 用于临时存放申请到的内存块地址
 
     // 如果 __pStateMachine 没有初始化, 无法注册事件
     if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)) {
@@ -216,12 +221,12 @@ void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, sm
     }
 
     if (IS_NULL(pSm->pSMChain[stateID].events)) {
-        pSm->pSMChain[stateID].events = (struct stateMachine_event_s*)dyMM;
+        pSm->pSMChain[stateID].events = (smEventPtr_t)dyMM;
         pSm->pSMChain[stateID].events->pEventForGoing = pEventForGoing;
         pSm->pSMChain[stateID].events->nextState = nextState;
         pSm->pSMChain[stateID].events->nextEvent = 0;
     } else {
-        p = (struct stateMachine_event_s*)dyMM;
+        p = (smEventPtr_t)dyMM;
         p->pEventForGoing = pEventForGoing;
         p->nextState = nextState;
         p->nextEvent = 0;
@@ -237,7 +242,7 @@ void fsm_eventSignUp(stateMachine_t* pSm, uint8_t stateID, uint8_t nextState, sm
 /*
 向指定的状态机注册动作,将指定的事件注册到对应的状态下
 */
-void fsm_actionSignUp(stateMachine_t* pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExit) {
+void fsm_actionSignUp(smPtr_t pSm, uint8_t stateID, smActionFunc_t pEnter, smActionFunc_t pDo, smActionFunc_t pExit) {
     // 如果状态机或者状态链没有初始化, 无法注册动作
     if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain)) {
         if (IS_pSafe(pSm) && IS_pSafe(pSm->warningOn)) {
@@ -272,10 +277,10 @@ void fsm_actionSignUp(stateMachine_t* pSm, uint8_t stateID, smActionFunc_t pEnte
 /*
 运行指定的状态机
 */
-void fsm_run(stateMachine_t* pSm) {
-    struct stateMachine_event_s* p = 0;
-    smUnit_t* st = 0;
-    smUnit_t* stNew = 0;
+void fsm_run(smPtr_t pSm) {
+    smEventPtr_t p = 0;
+    smUnitPtr_t st = 0;
+    smUnitPtr_t stNew = 0;
 
     // 如果状态机或者状态链没有初始化, 无法注册动作
     if (IS_NULL(pSm) || IS_NULL(pSm->pSMChain) || IS_NULL(pSm->enterCounterOf) || pSm->stateID >= pSm->stateIDs_Count) {

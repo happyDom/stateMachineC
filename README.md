@@ -4,15 +4,16 @@
 
 基于C语言实现的状态机框架，基于此可以快捷的构建一个实用的状态机
 
-## 软件架构
+## 目录结构
 
-1. 状态机框架头文件<font color=Red>stateMachine.h</font>
-2. 状态机框架实现<font color=Red>stateMachine.c</font>
-3. 动态内存管理头文件<font color=Red>stateMachineMemmory.h</font>
-4. 动态内存管理实现<font color=Red>stateMachineMemmory.c</font>
-5. *demo*状态机头文件<font color=Red>smDemo.h</font>
-6. *demo*状态机实现<font color=Red>smDemo.c</font>
-7. *main*文件<font color=Red>main.c</font>
+- `src/` —— 库本体，只需要把这两个文件加入你的工程：
+  - `stateMachine.h` 状态机框架头文件
+  - `stateMachine.c` 状态机框架实现
+- `cfg/userSMCfg.h.sample` —— 用户配置样例，照抄到你自己的项目里并改名 `userSMCfg.h`
+  （轮询周期、状态机层/状态层 buffer 配置、静态内存池大小，以及可选的 `SM_MEM` 存放区）；
+- `example/` —— 参考示例，不参与库编译，也不需要加入你的工程：
+  - `smDemo.h` / `smDemo.c` demo 状态机
+  - `main.c` demo 的运行入口
 
 ## 安装教程
 
@@ -22,8 +23,29 @@
 git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
 ```
 
+## 配置项（userSMCfg.h）
+
+库本身不带默认配置，可调项都在你项目里的 `userSMCfg.h` 中定义（照着 `cfg/userSMCfg.h.sample` 抄）：
+
+- `SM_CYCLE_TIME_MS` —— 一拍多少毫秒，必须与你调用 `fsm_run()` 的实际周期一致（`roundCounter`、`CNTSOFms` 都按它换算）；
+- `SM_BUFFER_NO/FULL/PART/TINY` —— 状态机层的数据 buffer，四选一；
+- `ST_BUFFER_NO/FULL/PART/TINY` —— 状态层的数据 buffer，四选一（RAM 占用 = 状态数 × sizeof(stBuffer_t)）；
+- `DMEM_BUFFER_SIZE` —— 静态内存池大小（字节），`fsm_init` / `fsm_eventSignUp` 都从这块池里切内存；
+- `SM_MEM`（可选）—— 指定状态机对象、状态单元、事件节点和内存池的存放区，例如 `#define SM_MEM xdata`；不定义则由编译器按内存模型处理。
+
+启用 `SM_MEM` 时，应用侧只有两件事要做：
+
+1. 声明对象时写上 `SM_MEM`：`stateMachine_t SM_MEM myFSM;`
+   漏写不是语法错误，但会立刻报一串 `C150 'edata' pointer converted to 'xdata' pointer`，照着告警补上即可；
+2. 动作/事件回调的参数统一用 `smUnitPtr_t`，不要写 `smUnit_t*`（后者是 edata 指针，与库里带 `SM_MEM` 的回调原型对不上，会报 `C98/C91`）。
+
+另外两点（都是踩过的坑）：
+
+- 对象落在 xdata 时**不要写初始化器**（`= {0}` 这类）：C251 不为 xdata 生成启动初始化代码，初始化器会被静默丢弃；`fsm_init` 本来就会把全部字段赋一遍，直接 `stateMachine_t SM_MEM myFSM;` 就行。
+- 不要试图把存储类折进 typedef（`typedef struct X SM_MEM T;`）来省掉 `SM_MEM`：C251 对这种写法处理不可靠，实测实例可能静默落回 edata 且不报任何告警。
 ## 使用说明
 
+- 👉先在项目里照 `cfg/userSMCfg.h.sample` 建 `userSMCfg.h`，并把 `src/` 加入头文件搜索路径
 - 👉构建你的状态机（假设你的状态机名称为smDemo）
   - 添加 *smDemo.h* 文档
   - 添加 *smDemo.c* 文档
@@ -75,13 +97,13 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
     char keys[7] = {'a','b','c','d','e','f','g'};
 
     char inputKey;
-    stateMachine_t demoSM;
+    stateMachine_t SM_MEM demoSM;
     ```
 
   - 实现状态机的进入事件，逗留事件和退出事件；你可以为每个状态分别实现不同的进入事件，逗留事件和退出事件，也可以共用它们
 
     ```C
-    void actionEntry(smUnit_t *pSt)
+    void actionEntry(smUnitPtr_t pSt)
     {
         if(pSt->pSm->roundCounter == 0){
             //状态机首次运行时
@@ -92,13 +114,13 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
         }
     }
 
-    void actionDo(smUnit_t *pSt)
+    void actionDo(smUnitPtr_t pSt)
     {
         //状态机的do事件
-        printf("----roundCounter of %c is %d\n", keys[pSt->stateID], pSt->roundCounter);
+        printf("----roundCounter of %c is %lu\n", keys[pSt->stateID], (unsigned long)pSt->roundCounter);
     }
 
-    void actionExit(smUnit_t *pSt)
+    void actionExit(smUnitPtr_t pSt)
     {
         //状态机的退出事件
         printf("state exchanged: %c", keys[pSt->stateID]);
@@ -108,10 +130,10 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
   - 实现状态机跳转事件，用于在每一次轮询状态机时观察是否发生了对应的事件，如果发生了（返回go），则状态跳转到对应的目标状态
   
     ```C
-    smEventResult_t pressA(smUnit_t *pSt) {return 'a' == inputKey;};
-    smEventResult_t pressB(smUnit_t *pSt) {return 'b' == inputKey;};
-    smEventResult_t pressC(smUnit_t *pSt) {return 'c' == inputKey;};
-    smEventResult_t pressD(smUnit_t *pSt) {return 'd' == inputKey;};
+    smEventResult_t pressA(smUnitPtr_t pSt) {return 'a' == inputKey;};
+    smEventResult_t pressB(smUnitPtr_t pSt) {return 'b' == inputKey;};
+    smEventResult_t pressC(smUnitPtr_t pSt) {return 'c' == inputKey;};
+    smEventResult_t pressD(smUnitPtr_t pSt) {return 'd' == inputKey;};
     ```
 
   - 实现 *smDemoBuild* 方法，初始化状态机，为每个状态注册对应的事件处理函数，以及为每个状态跳转路径注册对应的事件函数；以下的demo中实现了如下的一个状态机跳转关系：
@@ -120,30 +142,31 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
     ```C
     void smDemoBuild()
     {
-        fsm_init(&demoSM, stateID_count, 0);
+        fsm_init(&demoSM, stateID_count, 0, 0, 0);   // 5 个参数：状态数、默认状态、报警回调、do 后处理回调
         
         // 注册状态动作
         // 为每一个状态指定进入事件，逗留事件和退出事件
-        // 如果你的某些状态不需要全部的事件，则将不需要对应事件的位置使用NULL做入参即可
-        demoSM.actionSignUp(&demoSM, a, actionEntry, 0, actionExit);
-        demoSM.actionSignUp(&demoSM, b, 0, actionDo, actionExit);
-        demoSM.actionSignUp(&demoSM, c, actionEntry, actionDo, 0);
-        demoSM.actionSignUp(&demoSM, d, 0, actionDo, 0);
+        // 如果你的某些状态不需要全部的事件，则将不需要对应事件的位置传 0 即可
+        fsm_actionSignUp(&demoSM, a, actionEntry, 0, actionExit);
+        fsm_actionSignUp(&demoSM, b, 0, actionDo, actionExit);
+        fsm_actionSignUp(&demoSM, c, actionEntry, actionDo, 0);
+        fsm_actionSignUp(&demoSM, d, 0, actionDo, 0);
         
         // 注册状态事件
         // 为每个状态跳转路径，指定对应的事件
-        demoSM.eventSingUp(&demoSM, a, b, pressB);  //a->b
-        demoSM.eventSingUp(&demoSM, a, c, pressC);  //a->c
+        fsm_eventSignUp(&demoSM, a, b, pressB);  //a->b
+        fsm_eventSignUp(&demoSM, a, c, pressC);  //a->c
 
-        demoSM.eventSingUp(&demoSM, b, d, pressD);  //b->d
+        fsm_eventSignUp(&demoSM, b, d, pressD);  //b->d
 
-        demoSM.eventSingUp(&demoSM, c, a, pressA);  //c->a
+        fsm_eventSignUp(&demoSM, c, a, pressA);  //c->a
 
-        demoSM.eventSingUp(&demoSM, d, a, pressA);  //d->a
-        demoSM.eventSingUp(&demoSM, d, b, pressB);  //d->b
+        fsm_eventSignUp(&demoSM, d, a, pressA);  //d->a
+        fsm_eventSignUp(&demoSM, d, b, pressB);  //d->b
 
-        //状态机配置完成后，打印状态机使用的内存块的数量
-        printf("the blockSize needed is: %d\n", dyMM_blocksNumOfUsed());
+
+        // 状态机配置完成后，DMEM_BUFFER_SIZE 的取值可以按 map 里 DMEMORY 段的实际占用再往回收
+        // （调试时可临时把 stateMachine.c 里的 bufferUsed 改成非 static 打印出来）
     }
     ```
 
@@ -152,7 +175,7 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
     ```C
     void smDemoRun(void)
     {
-        demoSM.run(&demoSM);
+        fsm_run(&demoSM);
     }
     ```
 
@@ -188,9 +211,8 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
     ```
 
 - 👉效果说明
-  - 内存块实际需求量  
-    程序运行后，打印显示了状态机构建完成后实际需要的内存块数量，您可以根据这个值调整 *stateMachineMemmory.c* 中的 *DMEM_BLOCK_NUM* 的值，以避免不必要的内存浪费。
-    ![Snipaste_2025-03-22_22-27-50](https://s2.loli.net/2025/03/22/S9LA27uXDzr6Bth.png)
+  - 内存池实际需求量  
+    `fsm_init` 完成后，报告里 `DMEMORY` 段的占用就是实际切走的字节数；把 `userSMCfg.h` 里的 `DMEM_BUFFER_SIZE` 调到这个值（留一点余量）即可，避免不必要的内存浪费。
   - 状态机启动后进入默认状态，显示状态的轮询次数，并等待用户输入值
     ![Snipaste_2025-03-22_22-31-52](https://s2.loli.net/2025/03/22/qHsCZ3RiQ5Izfxc.png)
   - 当用户输入后，状态机会检测用户输入是否满足状态跳转条件，如果检测到某键被按下（事件发生），则状态机会跳转到新的状态中，此时会执行前一状态的退出事件（如果有），然后执行新状态的进入事件（如果有）
@@ -202,15 +224,16 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
 
     以上完整说明并演示了状态机框架的使用过程和使用效果。在实际的工程项目中，您可以根据您的具体需求定义并实现您的个性化状态机。
 
-- 两个未演示的状态机层面的方法  
-  以上未演示到的，状态机框架中支持的两个方法是 *actionOnChangeBeforeEnter* 和 *actionAfterDo*，现说明如下
-  - *actionOnChangeBeforeEnter* 方法（参数是新的状态的指针）
-    该方法在状态跳转发生时，新的状态 *enter* 事件前执行。您可以在此方法中（您需要实现该方法并注册到状态机中）做一些状态切换时要处理的事务。例如计数器复位，再如标志位清除等。
-  - *actionAfterDo* 方法（参数是当前状态的指针）
-    该方法在状态 *Do* 事件后执行。您可以在此方法中（您需要实现该方法并注册到状态机中）做一些共性的善后事务。例如计数器更新，再如执行器动作等。
+- `fsm_init` 的五个参数
 
-    以上两个事件并非必要，其实其所运行的时机完全可以在 *Enter* 事件和 *Do* 事件中完成。
+  `fsm_init(&myFSM, 状态数, 默认状态, 报警回调, do 后处理回调)`
 
+  - **状态数**：你 enum 里的 `stateID_count`，即状态个数，状态值必须从 0 开始且连续；
+  - **默认状态**：上电后进入的状态 ID；
+  - **报警回调**（可传 0）：初始化或申请内存失败时先调用它，然后 `while(1)` 停在那里 —— 很适合在这里点灯或响蜂鸣器，方便现场定位；
+  - **do 后处理回调**（可传 0）：每个状态的 *Do* 动作之后执行，适合放共性的善后事务（计数更新、执行器刷新等）。
+
+  这两项都不是必需的，传 0 即可；它们的执行时机也完全可以在 *Enter*/*Do* 动作里完成。
 ## 参与贡献
 
 1. Fork 本仓库

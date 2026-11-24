@@ -1,0 +1,59 @@
+/*
+ * userSMCfg.h.sample —— stateMachineC 库的用户配置文件参考样例
+ *
+ * 说明：本文件带 .sample 后缀，不会被任何头文件搜索路径当作配置文件使用，
+ *       它的作用只是给你一个可以照抄的样例，请不要在本库目录内修改它。
+ *
+ * 使用说明：
+ * 1、在你的项目里新建 userSMCfg.h（文件名去掉 .sample），把下面的宏抄进去并按项目情况修改，
+ *    不需要改动 stateMachineC 模块本身的任何代码；同时把 src/ 目录加入头文件搜索路径。
+ * 2、stateMachine.h 会引用你项目里的 userSMCfg.h。如果编译时提示
+ *    “please #define DMEM_BUFFER_SIZE //in userSMCfg.h” 或
+ *    “please #define SM_CYCLE_TIME_MS //in userSMCfg.h”，
+ *    说明这个文件没有被找到，或对应宏被注释掉了。
+ * 3、库内不自带定时器，轮询节拍由你按固定周期调用 fsm_run() 产生，
+ *    所以 SM_CYCLE_TIME_MS 必须与你实际的调用周期一致：
+ *    状态单元里的 roundCounter 以“拍”为单位累加，CNTSOFms / CNTSOFs 也按它换算。
+ */
+#ifndef _USER_SM_CFG_H_
+#define _USER_SM_CFG_H_
+
+/* 状态机运行周期（一拍 = 多少毫秒）
+ * 必须与调用 fsm_run() 的实际周期一致，例如主程序每 10ms 调一次，就填 10。 */
+#define SM_CYCLE_TIME_MS          10
+
+/* 状态机层的数据 buffer：四选一（也可以用 NO 表示不用 buffer）
+ *   SM_BUFFER_NO	状态机层面不定义 buffer
+ *   SM_BUFFER_FULL	全量 buffer（bool / i8 / u8 / i16 / u16 / i32 / u32 / f32 + 一个 void*）
+ *   SM_BUFFER_PART	部分 buffer
+ *   SM_BUFFER_TINY	最小 buffer（只到 16 位）
+ * 用途：在不同的状态之间传数据，省掉一堆全局变量。
+ * 注意：buffer 里不要放指针 —— C51 的指针自带存储区，无法预料你要指向哪个区。 */
+#define SM_BUFFER_NO
+
+/* 状态层的数据 buffer：同上，四选一
+ * 每个状态单元各有一份，所以 RAM 占用是 状态数 × sizeof(stBuffer_t)。 */
+#define ST_BUFFER_NO
+// #define ST_BUFFER_TINY
+
+/* 状态机静态内存池大小（字节）
+ * fsm_init / fsm_eventSignUp 都从这块池里切内存：状态单元数组、事件节点、enterCounterOf 数组……
+ * 池子里切不出来时，会先调用 warningFunc 报警，然后 while(1) 死等 —— 所以宁可先给大。
+ * 项目定形后，按项目里 DMEM_BUFFER_SIZE 的实际占用（看 map 里 DMEMORY 段，或看 bufferUsed 的值）
+ * 再往回缩，能省不少 RAM。 */
+#define DMEM_BUFFER_SIZE          512
+
+/* 可选：SM_MEM 指定状态机对象、状态单元与内存池的存放区
+ * 在 51 类单片机上，可按项目情况指定 data/idata/xdata/pdata，
+ * 例如： #define SM_MEM      xdata
+ * 不定义时表示不限定存储区（由编译器默认处理）。
+ *
+ * 注意：存储类修饰符是类型的一部分，开关 SM_MEM 时下面这些要一起走：
+ *   1) 应用侧对象声明写 stateMachine_t SM_MEM xxx;（漏写会报一串 C150，照着补上即可）
+ *   2) 回调参数统一用库里给的 smUnitPtr_t / smPtr_t，不要自己写 smUnit_t*；
+ *   3) 池里既有 uint32_t 数组也有结构体，库内对齐粒度已固定为 4 字节，不必再按 sizeof(void*) 算。
+ *   4) xdata 对象不要写初始化器（C251 不为 xdata 生成启动初始化代码），交给 fsm_init 赋值。
+ */
+// #define SM_MEM      xdata
+
+#endif /* _USER_SM_CFG_H_ */

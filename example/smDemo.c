@@ -5,9 +5,9 @@
 char keys[7] = {'a', 'b', 'c', 'd', 'e', 'f', 'g'};
 
 char inputKey;
-stateMachine_t demoSM;
+stateMachine_t SM_MEM demoSM;
 
-void actionEntry(smUnit_t* pSt) {
+void actionEntry(smUnitPtr_t pSt) {
     if (pSt->pSm->roundCounter == 0) {
         // 状态机首次运行时
         printf("the current state is: %c\n", keys[pSt->stateID]);
@@ -17,23 +17,24 @@ void actionEntry(smUnit_t* pSt) {
     }
 }
 
-void actionDo(smUnit_t* pSt) {
+void actionDo(smUnitPtr_t pSt) {
     // 状态机的do事件
-    printf("----roundCounter of %c is %d\n", keys[pSt->stateID], pSt->roundCounter);
+    printf("----roundCounter of %c is %lu\n", keys[pSt->stateID], (unsigned long)pSt->roundCounter);
 }
 
-void actionExit(smUnit_t* pSt) {
+void actionExit(smUnitPtr_t pSt) {
     // 状态机的退出事件
     printf("state exchanged: %c", keys[pSt->stateID]);
 }
 
-smEventResult_t pressA(smUnit_t* pSt) { return 'a' == inputKey; };
-smEventResult_t pressB(smUnit_t* pSt) { return 'b' == inputKey; };
-smEventResult_t pressC(smUnit_t* pSt) { return 'c' == inputKey; };
-smEventResult_t pressD(smUnit_t* pSt) { return 'd' == inputKey; };
+smEventResult_t pressA(smUnitPtr_t pSt) { return 'a' == inputKey; };
+smEventResult_t pressB(smUnitPtr_t pSt) { return 'b' == inputKey; };
+smEventResult_t pressC(smUnitPtr_t pSt) { return 'c' == inputKey; };
+smEventResult_t pressD(smUnitPtr_t pSt) { return 'd' == inputKey; };
 
 void smDemoBuild() {
-    fsm_init(&demoSM, stateID_count, 0, 0);
+    // 第 4 个参数是异常报警回调，第 5 个参数是每个 do 动作之后要执行的动作，本例都不用，传 0
+    fsm_init(&demoSM, stateID_count, 0, 0, 0);
 
     // 注册状态动作
     // 为每一个状态指定进入事件，逗留事件和退出事件
@@ -52,8 +53,7 @@ void smDemoBuild() {
     fsm_eventSignUp(&demoSM, d, a, pressA);
     fsm_eventSignUp(&demoSM, d, b, pressB);
 
-    // 状态机配置完成后，打印状态机使用的内存块的数量
-    printf("the blockSize needed is: %d\n", dyMM_blocksNumOfUsed());
+    // 状态机配置完成后，DMEM_BUFFER_SIZE 的取值请按 `bufferUsed` 的实际值（或 map 里 DMEMORY 的占用）来定
 }
 
 /*
