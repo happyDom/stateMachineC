@@ -28,8 +28,8 @@ git submodule add git@gitee.com:DyyYq/stateMachineC.git submodule/stateMachineC
 库本身不带默认配置，可调项都在你项目里的 `userSMCfg.h` 中定义（照着 `cfg/userSMCfg.h.sample` 抄）：
 
 - `SM_CYCLE_TIME_MS` —— 一拍多少毫秒，必须与你调用 `fsm_run()` 的实际周期一致（`roundCounter`、`CNTSOFms` 都按它换算）；
-- `SM_BUFFER_NO/FULL/PART/TINY` —— 状态机层的数据 buffer，四选一；
-- `ST_BUFFER_NO/FULL/PART/TINY` —— 状态层的数据 buffer，四选一（RAM 占用 = 状态数 × sizeof(stBuffer_t)）；
+- `SM_BUFFER_FULL/PART/TINY` —— 状态机层的数据 buffer，三选一；都不定义 = 不用 buffer（代码只认这三个名字）；
+- `ST_BUFFER_FULL/PART/TINY` —— 状态层的数据 buffer，同样三选一（RAM 占用 = 状态数 × sizeof(stBuffer_t)）；
 - `DMEM_BUFFER_SIZE` —— 静态内存池大小（字节），`fsm_init` / `fsm_eventSignUp` 都从这块池里切内存；
 - `SM_MEM`（可选）—— 指定状态机对象、状态单元、事件节点和内存池的存放区，例如 `#define SM_MEM xdata`；不定义则由编译器按内存模型处理。
 

@@ -15,18 +15,14 @@
  #define SM_CYCLE_TIME_MS         5    //状态机运行周期，单位为毫秒
 
  * 2、配置状态机层和状态层的数据buffer，如果你需要在不同的状态之间传递数据，这是个不错的选择
- *
- * SM_BUFFER_NO		//状态机层面不定义buffer
+ * 每种 buffer 三选一，都不定义就表示不定义buffer：
  * SM_BUFFER_FULL	//状态机层面定义全量buffer
  * SM_BUFFER_PART	//状态机层面定义部分buffer
  * SM_BUFFER_TINY	//状态机层面定义最小buffer
-#define SM_BUFFER_NO
 
- * ST_BUFFER_NO		//状态层面不定义buffer
  * ST_BUFFER_FULL	//状态层面定义全量buffer
  * ST_BUFFER_PART	//状态层面定义部分buffer
  * ST_BUFFER_TINY	//状态层面定义最小buffer
-#define ST_BUFFER_NO
 
  * 3、定义变量 DMEM_BUFFER_SIZE 用于管理状态机使用的内存，在项目定形后，通过观察bufferUsed的值，适当的减小该变量的值
 #define DMEM_BUFFER_SIZE          512
